@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: Coins-Collect-Fees-Indexer
+contracts:
+  - name: LockableUniswapV3Initializer
+    handler: src/EventHandlers.ts
+    events:
+      - event: Collect (address indexed pool, address indexed beneficiary, uint256 fees0, uint256 fees1)
+        field_selection:
+          transaction_fields:
+            - hash
+
+networks:
+  - id: 8453
+    start_block: 32640102
+    contracts:
+      - name: LockableUniswapV3Initializer
+        address:
+          - 0xE0dC4012AC9C868F09c6e4b20d66ED46D6F258d0
+
+unordered_multichain_mode: true
+preload_handlers: true
