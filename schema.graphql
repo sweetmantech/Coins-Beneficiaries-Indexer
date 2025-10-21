@@ -1,9 +1,16 @@
-type LockableUniswapV3Initializer_Collect {
+type BeneficiaryData {
   id: ID!
+  lockId: String!
   pool: String!
   beneficiary: String!
-  fees0: BigInt!
-  fees1: BigInt!
+  shares: BigInt!
+  transactionHash: String!
+  blockNumber: Int!
+}
+
+type LockableUniswapV3Initializer_Lock {
+  id: ID!
+  pool: String!
   transactionHash: String!
   blockNumber: Int!
 }

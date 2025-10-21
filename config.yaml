@@ -1,10 +1,12 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: Coins-Collect-Fees-Indexer
+event_decoder: viem
 contracts:
   - name: LockableUniswapV3Initializer
     handler: src/EventHandlers.ts
+    abi_file_path: abis/LockableUniswapV3Initializer.json
     events:
-      - event: Collect (address indexed pool, address indexed beneficiary, uint256 fees0, uint256 fees1)
+      - event: Lock
         field_selection:
           transaction_fields:
             - hash

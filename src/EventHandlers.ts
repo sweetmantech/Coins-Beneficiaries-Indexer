@@ -3,18 +3,33 @@
  */
 import {
   LockableUniswapV3Initializer,
-  LockableUniswapV3Initializer_Collect,
+  LockableUniswapV3Initializer_Lock,
+  BeneficiaryData,
 } from "generated";
 
-LockableUniswapV3Initializer.Collect.handler(async ({ event, context }) => {
-  const entity: LockableUniswapV3Initializer_Collect = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+LockableUniswapV3Initializer.Lock.handler(async ({ event, context }) => {
+  const lockId = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+
+  // Create the Lock entity
+  const lockEntity: LockableUniswapV3Initializer_Lock = {
+    id: lockId,
     pool: event.params.pool,
-    beneficiary: event.params.beneficiary,
-    fees0: event.params.fees0,
-    fees1: event.params.fees1,
     transactionHash: event.transaction.hash,
     blockNumber: event.block.number,
   };
-  context.LockableUniswapV3Initializer_Collect.set(entity);
+  context.LockableUniswapV3Initializer_Lock.set(lockEntity);
+
+  // Process the beneficiaries tuple array
+  event.params.beneficiaries.forEach((beneficiary: any, index: number) => {
+    const beneficiaryEntity: BeneficiaryData = {
+      id: `${lockId}_${index}`,
+      lockId: lockId,
+      pool: event.params.pool,
+      beneficiary: beneficiary[0], // First element is beneficiary address
+      shares: beneficiary[1], // Second element is shares
+      transactionHash: event.transaction.hash,
+      blockNumber: event.block.number,
+    };
+    context.BeneficiaryData.set(beneficiaryEntity);
+  });
 });
