@@ -19,6 +19,7 @@ type CoopCreator1155_Purchased {
   id: ID!
   sender: String!
   minter: String!
+  collection: String!
   tokenId: BigInt!
   quantity: BigInt!
   value: BigInt!

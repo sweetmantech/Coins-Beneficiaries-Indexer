@@ -6,6 +6,7 @@ CoopCreator1155.Purchased.handler(
       id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
       sender: event.params.sender,
       minter: event.params.minter,
+      collection: event.srcAddress,
       tokenId: event.params.tokenId,
       quantity: event.params.quantity,
       value: event.params.value,
