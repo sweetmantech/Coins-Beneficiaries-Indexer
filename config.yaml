@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
-name: Coins-Collect-Fees-Indexer
+name: Coop-Records-Indexer
 event_decoder: viem
 contracts:
   - name: LockableUniswapV3Initializer
@@ -7,6 +7,13 @@ contracts:
     abi_file_path: abis/LockableUniswapV3Initializer.json
     events:
       - event: Lock
+        field_selection:
+          transaction_fields:
+            - hash
+  - name: CoopCreator1155
+    handler: src/EventHandlers.ts
+    events:
+      - event: Purchased(address indexed sender, address indexed minter, uint256 indexed tokenId, uint256 quantity, uint256 value)
         field_selection:
           transaction_fields:
             - hash
@@ -18,6 +25,10 @@ networks:
       - name: LockableUniswapV3Initializer
         address:
           - 0xE0dC4012AC9C868F09c6e4b20d66ED46D6F258d0
+  - id: 1868
+    start_block: 15838290
+    contracts:
+      - name: CoopCreator1155
 
 unordered_multichain_mode: true
 preload_handlers: true
