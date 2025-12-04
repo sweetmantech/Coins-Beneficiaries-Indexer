@@ -14,3 +14,14 @@ type LockableUniswapV3Initializer_Lock {
   transactionHash: String!
   blockNumber: Int!
 }
+
+type CoopCreator1155_Purchased {
+  id: ID!
+  sender: String!
+  minter: String!
+  tokenId: BigInt!
+  quantity: BigInt!
+  value: BigInt!
+  transactionHash: String!
+  blockNumber: Int!
+}
