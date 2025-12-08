@@ -10,6 +10,10 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+      - event: Collect
+        field_selection:
+          transaction_fields:
+            - hash
   - name: CoopCreator1155
     handler: src/EventHandlers.ts
     events:
