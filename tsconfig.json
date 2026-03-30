@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020", //required for use with BigInt types
-    "lib": [
-      "es2020"
-    ],
+    "lib": ["es2020"],
     "allowJs": true,
     "checkJs": false,
     "outDir": "build",
@@ -12,10 +10,22 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "module": "CommonJS"
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "include": [
-    "src",
-    "test"
-  ]
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "esm": false,
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "target": "es2020"
+    }
+  },
+  "include": ["src", "test"]
 }

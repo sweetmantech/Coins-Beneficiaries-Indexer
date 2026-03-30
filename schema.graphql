@@ -1,38 +1,182 @@
-type LockableUniswapV3Initializer_Collect {
+type InProcess_Collections {
   id: ID!
-  pool: String!
-  beneficiary: String!
-  fees0: BigInt!
-  fees1: BigInt!
-  transactionHash: String!
-  blockNumber: Int!
+  address: String!
+  name: String!
+  uri: String!
+  default_admin: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
 }
 
-type BeneficiaryData {
+type InProcess_Moments {
   id: ID!
-  lockId: String!
-  pool: String!
-  beneficiary: String!
-  shares: BigInt!
-  transactionHash: String!
-  blockNumber: Int!
-}
-
-type LockableUniswapV3Initializer_Lock {
-  id: ID!
-  pool: String!
-  transactionHash: String!
-  blockNumber: Int!
-}
-
-type CoopCreator1155_Purchased {
-  id: ID!
-  sender: String!
-  minter: String!
   collection: String!
-  tokenId: BigInt!
+  token_id: BigInt!
+  uri: String!
+  max_supply: BigInt!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Primary_Sales {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  price_per_token: BigInt!
+  funds_recipient: String!
+  currency: String!
+  sale_start: BigInt
+  sale_end: BigInt
+  max_tokens_per_address: BigInt
+  chain_id: Int!
+  transaction_hash: String!
+  created_at: Int!
+}
+
+type InProcess_Admins {
+  id: ID!
+  admin: String!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  permission: Int!
+  updated_at: Int!
+}
+
+type InProcess_Moment_Comments {
+  id: ID!
+  collection: String!
+  sender: String!
+  token_id: BigInt!
+  comment: String
+  chain_id: Int!
+  commented_at: Int!
+  transaction_hash: String!
+}
+
+type InProcess_Airdrops {
+  id: ID!
+  recipient: String!
+  collection: String!
+  token_id: BigInt!
+  amount: BigInt!
+  chain_id: Int!
+  updated_at: Int!
+}
+
+type Payments {
+  id: ID!
+  collection: String!
+  currency: String!
+  token_id: BigInt!
+  recipient: String!
+  spender: String!
+  amount: String!
+  chain_id: Int!
+  transaction_hash: String!
+  transferred_at: Int!
+}
+
+type Catalog_Moments {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  artist: String!
+  uri: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Catalog_Collections {
+  id: ID!
+  address: String!
+  name: String!
+  creator: String!
+  uri: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Collectors {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  amount: BigInt!
+  chain_id: Int!
+  collector: String!
+  transaction_hash: String!
+  collected_at: Int!
+}
+
+type Catalog_Admins {
+  id: ID!
+  admin: String!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  auth_scope: Int!
+  updated_at: Int!
+}
+
+type Secondary_Sales {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  royalty_recipient: String!
+  royalty_bps: Int!
+  chain_id: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Sound_Editions {
+  id: ID!
+  address: String!
+  name: String!
+  owner: String!
+  uri: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Sound_Tiers {
+  id: ID!
+  collection: String!
+  tier: Int!
+  uri: String!
   quantity: BigInt!
-  value: BigInt!
-  transactionHash: String!
-  blockNumber: Int!
+  chain_id: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Sound_Moments {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  uri: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Sound_Admins {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  admin: String!
+  roles: Int!
+  chain_id: Int!
+  updated_at: Int!
 }
