@@ -228,11 +228,24 @@ const MINT_CREATION = [
   zeroAddress, // [9] platform (address)
   0n, // [10] mode (uint8)
   ZERO_BYTES32, // [11] merkleRoot (bytes32)
+] as [
+  string,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  string,
+  bigint,
+  string,
+  bigint,
+  string,
 ];
 
 function makeBasePrimarySale(chainId: number): Primary_Sales {
   return {
-    id: `${EDITION}_0_${chainId}`,
+    id: `${EDITION}_0_0_${chainId}`,
     collection: EDITION,
     token_id: 0n,
     price_per_token: 1_000_000n,
@@ -241,6 +254,7 @@ function makeBasePrimarySale(chainId: number): Primary_Sales {
     sale_start: 1000n,
     sale_end: 2000n,
     max_tokens_per_address: 5n,
+    schedule_num: 0,
     chain_id: chainId,
     transaction_hash: "",
     created_at: 0,
@@ -261,7 +275,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.MintCreated.processEvent({ event, mockDb });
 
-      const id = `${EDITION}_0_${event.chainId}`;
+      const id = `${EDITION}_0_0_${event.chainId}`;
       const actual = await db.entities.Primary_Sales.get(id);
 
       const expected: Primary_Sales = {
@@ -274,6 +288,7 @@ describe("SuperMinterV2 Handler Tests", () => {
         sale_start: 1000n,
         sale_end: 2000n,
         max_tokens_per_address: 5n,
+        schedule_num: 0,
         chain_id: event.chainId,
         transaction_hash: event.transaction.hash,
         created_at: event.block.timestamp,
@@ -307,7 +322,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.MintCreated.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_8453`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_8453`);
       assert.equal(actual?.funds_recipient, RECIPIENT);
     });
 
@@ -330,7 +345,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.MintCreated.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(
         actual?.price_per_token,
         originalPrice,
@@ -354,7 +369,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.PriceSet.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(actual?.price_per_token, 2_000_000n);
     });
 
@@ -370,7 +385,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.PriceSet.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(actual, undefined);
     });
   });
@@ -391,7 +406,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.TimeRangeSet.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(actual?.sale_start, 5000n);
       assert.equal(actual?.sale_end, 9000n);
     });
@@ -410,7 +425,7 @@ describe("SuperMinterV2 Handler Tests", () => {
         mockDb: MockDb.createMockDb(),
       });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(actual, undefined);
     });
   });
@@ -430,7 +445,7 @@ describe("SuperMinterV2 Handler Tests", () => {
 
       const db = await SuperMinterV2.MaxMintablePerAccountSet.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(actual?.max_tokens_per_address, 10n);
     });
 
@@ -447,7 +462,7 @@ describe("SuperMinterV2 Handler Tests", () => {
         mockDb: MockDb.createMockDb(),
       });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_${event.chainId}`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_${event.chainId}`);
       assert.equal(actual, undefined);
     });
   });
@@ -526,35 +541,34 @@ describe("SoundEditionV2_1 Handler Tests", () => {
         })
         .entities.Primary_Sales.set({
           ...makeBasePrimarySale(8453),
-          id: `${EDITION}_0_8453`,
+          id: `${EDITION}_0_0_8453`,
           funds_recipient: zeroAddress,
         });
 
       const db = await SoundEditionV2_1.FundingRecipientSet.processEvent({ event, mockDb });
 
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_8453`);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_8453`);
       assert.equal(actual?.funds_recipient, RECIPIENT.toLowerCase());
     });
 
-    it("should skip tiers without a Sound_Moments row", async () => {
+    it("should update Primary_Sales.funds_recipient regardless of Sound_Moments", async () => {
       const event = SoundEditionV2_1.FundingRecipientSet.createMockEvent({
         recipient: RECIPIENT as `0x${string}`,
         mockEventData: { chainId: 8453 },
       });
       (event as { srcAddress: string }).srcAddress = EDITION;
 
-      // Primary_Sales exists for tier 0, but no Sound_Moments row
+      // Primary_Sales exists for tier 0, no Sound_Moments row — should still be updated
       const mockDb = MockDb.createMockDb().entities.Primary_Sales.set({
         ...makeBasePrimarySale(8453),
-        id: `${EDITION}_0_8453`,
+        id: `${EDITION}_0_0_8453`,
         funds_recipient: zeroAddress,
       });
 
       const db = await SoundEditionV2_1.FundingRecipientSet.processEvent({ event, mockDb });
 
-      // funds_recipient should remain unchanged
-      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_8453`);
-      assert.equal(actual?.funds_recipient, zeroAddress);
+      const actual = await db.entities.Primary_Sales.get(`${EDITION}_0_0_8453`);
+      assert.equal(actual?.funds_recipient, RECIPIENT.toLowerCase());
     });
   });
 

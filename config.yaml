@@ -164,10 +164,6 @@ networks:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
       # Catalog
       - name: CatalogRelease1155
-      # Sound.xyz
-      - name: SuperMinterV2
-        address:
-          - "0x000000000001A36777f9930aAEFf623771b13e70"
 
   - id: 8453
     start_block: 7272930

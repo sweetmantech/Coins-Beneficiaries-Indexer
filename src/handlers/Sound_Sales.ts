@@ -19,7 +19,7 @@ SuperMinterV2.MintCreated.handler(
 
 SuperMinterV2.PriceSet.handler(async ({ event, context }: SuperMinterV2_PriceSet_handlerArgs) => {
   const edition = event.params.edition.toLowerCase();
-  const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
+  const entityId = `${edition}_${event.params.tier}_${event.params.scheduleNum}_${event.chainId}`;
   const existing = await context.Primary_Sales.get(entityId);
   if (!existing) return;
   context.Primary_Sales.set({ ...existing, price_per_token: event.params.price });
@@ -28,7 +28,7 @@ SuperMinterV2.PriceSet.handler(async ({ event, context }: SuperMinterV2_PriceSet
 SuperMinterV2.TimeRangeSet.handler(
   async ({ event, context }: SuperMinterV2_TimeRangeSet_handlerArgs) => {
     const edition = event.params.edition.toLowerCase();
-    const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
+    const entityId = `${edition}_${event.params.tier}_${event.params.scheduleNum}_${event.chainId}`;
     const existing = await context.Primary_Sales.get(entityId);
     if (!existing) return;
     context.Primary_Sales.set({
@@ -42,7 +42,7 @@ SuperMinterV2.TimeRangeSet.handler(
 SuperMinterV2.MaxMintablePerAccountSet.handler(
   async ({ event, context }: SuperMinterV2_MaxMintablePerAccountSet_handlerArgs) => {
     const edition = event.params.edition.toLowerCase();
-    const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
+    const entityId = `${edition}_${event.params.tier}_${event.params.scheduleNum}_${event.chainId}`;
     const existing = await context.Primary_Sales.get(entityId);
     if (!existing) return;
     context.Primary_Sales.set({
@@ -80,12 +80,10 @@ SoundEditionV2_1.FundingRecipientSet.handler(
       });
     }
 
-    // Update Primary_Sales for all tiers — use Sound_Moments as tier existence gate
-    for (let tier = 0; tier <= 10; tier++) {
-      const moment = await context.Sound_Moments.get(`${address}_${tier}_${chainId}`);
-      if (!moment) continue;
-      const primarySale = await context.Primary_Sales.get(`${address}_${tier}_${chainId}`);
-      if (!primarySale) continue;
+    // Update Primary_Sales for all schedules on this edition
+    const primarySales = await context.Primary_Sales.getWhere.collection.eq(address);
+    for (const primarySale of primarySales) {
+      if (primarySale.chain_id !== chainId) continue;
       context.Primary_Sales.set({ ...primarySale, funds_recipient: recipient });
     }
   }
