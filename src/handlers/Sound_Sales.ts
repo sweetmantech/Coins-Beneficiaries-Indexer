@@ -22,7 +22,11 @@ SuperMinterV2.PriceSet.handler(async ({ event, context }: SuperMinterV2_PriceSet
   const entityId = `${edition}_${event.params.tier}_${event.params.scheduleNum}_${event.chainId}`;
   const existing = await context.Primary_Sales.get(entityId);
   if (!existing) return;
-  context.Primary_Sales.set({ ...existing, price_per_token: event.params.price });
+  context.Primary_Sales.set({
+    ...existing,
+    price_per_token: event.params.price,
+    created_at: event.block.timestamp,
+  });
 });
 
 SuperMinterV2.TimeRangeSet.handler(
@@ -35,6 +39,7 @@ SuperMinterV2.TimeRangeSet.handler(
       ...existing,
       sale_start: BigInt(event.params.startTime),
       sale_end: BigInt(event.params.endTime),
+      created_at: event.block.timestamp,
     });
   }
 );
@@ -48,6 +53,7 @@ SuperMinterV2.MaxMintablePerAccountSet.handler(
     context.Primary_Sales.set({
       ...existing,
       max_tokens_per_address: BigInt(event.params.value),
+      created_at: event.block.timestamp,
     });
   }
 );
@@ -84,7 +90,11 @@ SoundEditionV2_1.FundingRecipientSet.handler(
     const primarySales = await context.Primary_Sales.getWhere.collection.eq(address);
     for (const primarySale of primarySales) {
       if (primarySale.chain_id !== chainId) continue;
-      context.Primary_Sales.set({ ...primarySale, funds_recipient: recipient });
+      context.Primary_Sales.set({
+        ...primarySale,
+        funds_recipient: recipient,
+        created_at: event.block.timestamp,
+      });
     }
   }
 );
