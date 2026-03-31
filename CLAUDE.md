@@ -364,8 +364,7 @@ Sound.xyz uses **CREATE2 deterministic deployment** — same addresses on all su
 | ----------------------------------------------------- | ------------------ | ----------------------------------------------------------------------- |
 | `Created(implementation, edition, owner, ...)`        | `SoundCreatorV2`   | New edition deployed                                                    |
 | `SoundEditionInitialized(EditionInitialization)`      | `SoundEditionV2_1` | Edition initialized (name, symbol, fundingRecipient, royaltyBPS, tiers) |
-| `Minted(tier, to, quantity, fromTokenId)`             | `SoundEditionV2_1` | Tokens minted — source of Sound_Moments rows                            |
-| `BaseURISet(address edition, uint8 tier, string uri)` | `SoundMetadata`    | Per-tier base URI set — source of Sound_Tiers rows                      |
+| `BaseURISet(address edition, uint8 tier, string uri)` | `SoundMetadata`    | Per-tier base URI set — source of Sound_Moments rows                    |
 
 ---
 
@@ -386,22 +385,11 @@ type Sound_Editions {
   transaction_hash: String!
 }
 
-type Sound_Tiers {
+type Sound_Moments {
   id: ID! # ${edition}_${tier}_${chainId}
   collection: String!
-  tier: Int! # 0=free/GA, 1=limited, ... (uint8 category, NOT a token ID)
-  uri: String! # per-tier base URI from SoundMetadata (ArweaveURILib, trailing slash)
-  quantity: BigInt! # cumulative tokens minted in this tier — used to compute URI index
-  chain_id: Int!
-  updated_at: Int!
-  transaction_hash: String!
-}
-
-type Sound_Moments {
-  id: ID! # ${edition}_${tokenId}_${chainId}
-  collection: String!
-  token_id: BigInt! # ERC721A tokenId (1, 2, 3 … N — global sequential, spans all tiers)
-  uri: String! # Sound_Tiers.uri + tierIndex (1-indexed position within tier)
+  tier: Int! # 0=GA, 1+=premium (uint8 category, NOT a token ID)
+  uri: String! # baseURI/${tier} — from SoundMetadata.BaseURISet
   chain_id: Int!
   created_at: Int!
   updated_at: Int!
@@ -411,28 +399,25 @@ type Sound_Moments {
 
 #### Key Distinctions
 
-- **tier**: uint8 category (0=free/GA, 1=limited). Small fixed set per edition. Stored in `Sound_Tiers`.
-- **token_id**: ERC721A global sequential ID (1, 2, 3…N). Spans all tiers. Stored in `Sound_Moments`.
-- These are entirely separate concepts — do not conflate them.
+- **tier**: uint8 category (0=GA, 1+=premium). One `Sound_Moments` row per tier per edition.
+- No per-token rows — Sound.xyz tokens are grouped by tier, not tracked individually.
 
-#### URI Computation
+#### URI Format
 
 `SoundMetadata` (separate contract, `0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5`) stores per-tier base URIs.
 
 ```
-Sound_Tiers.uri     = "ar://...hash/"   (ArweaveURILib appends trailing slash)
-Sound_Tiers.quantity = N                (tokens minted in this tier so far)
+BaseURISet(edition, tier=0, uri="ar://...hash/"):
+  Sound_Moments.uri = "ar://...hash/0"
 
-Minted(tier, quantity=2, fromTokenId=4):
-  token 4 → uri = "ar://...hash/N+1"
-  token 5 → uri = "ar://...hash/N+2"
-  Sound_Tiers.quantity → N+2
+BaseURISet(edition, tier=1, uri="ar://...hash2/"):
+  Sound_Moments.uri = "ar://...hash2/1"
 ```
 
 #### Handler Files
 
 - `src/handlers/Sound_Editions.ts` — `SoundCreatorV2.Created` + `SoundEditionV2_1.SoundEditionInitialized`
-- `src/handlers/Sound_Moments.ts` — `SoundMetadata.BaseURISet` (→ Sound_Tiers) + `SoundEditionV2_1.Minted` (→ Sound_Moments)
+- `src/handlers/Sound_Moments.ts` — `SoundMetadata.BaseURISet` (→ Sound_Moments, upsert per tier)
 
 #### Config (Base Mainnet 8453)
 
@@ -485,7 +470,6 @@ If a config event signature marks a param as `indexed` but the contract does not
 
 Sound.xyz examples caught:
 
-- `Minted(uint8 tier, address to, uint256 quantity, uint256 fromTokenId)` — tier and to are **not** indexed (only 1 topic on-chain)
 - `BaseURISet(address indexed edition, uint8 tier, string uri)` — tier is **not** indexed (only 2 topics on-chain: sig + edition)
 
 ### 2. Factory Pattern: contractRegister Misses Same-Tx Events
