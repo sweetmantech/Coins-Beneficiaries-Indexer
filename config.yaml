@@ -80,6 +80,14 @@ contracts:
     handler: src/EventHandlers.ts
     events:
       - event: "RolesUpdated(address indexed user, uint256 indexed roles)"
+      - event: "FundingRecipientSet(address recipient)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "RoyaltySet(uint16 bps)"
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: SoundMetadata
     handler: src/EventHandlers.ts
@@ -88,6 +96,19 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+
+  - name: SuperMinterV2
+    handler: src/EventHandlers.ts
+    events:
+      # edition indexed only (tier is NOT indexed — verified on-chain)
+      - event: "MintCreated(address indexed edition, uint8 tier, uint8 scheduleNum, (address,uint96,uint32,uint32,uint32,uint32,uint16,bytes32,uint8,address,uint8,bytes32) creation)"
+        field_selection:
+          transaction_fields:
+            - hash
+      # edition IS indexed (verified on-chain)
+      - event: "PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)"
+      - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
+      - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
 
   - name: InProcessMoment
     handler: src/EventHandlers.ts
@@ -143,6 +164,10 @@ networks:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
       # Catalog
       - name: CatalogRelease1155
+      # Sound.xyz
+      - name: SuperMinterV2
+        address:
+          - "0x000000000001A36777f9930aAEFf623771b13e70"
 
   - id: 8453
     start_block: 7272930
@@ -181,6 +206,9 @@ networks:
       - name: SoundMetadata
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
+      - name: SuperMinterV2
+        address:
+          - "0x000000000001A36777f9930aAEFf623771b13e70"
 
 unordered_multichain_mode: true
 preload_handlers: true

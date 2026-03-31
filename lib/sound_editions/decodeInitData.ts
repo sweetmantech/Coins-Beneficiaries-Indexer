@@ -2,7 +2,12 @@ import { decodeAbiParameters } from "viem";
 
 // SoundEditionInitialized fires BEFORE Created in the same transaction,
 // so contractRegister always misses it. Decode initData from Created instead.
-export function decodeInitData(initData: string): { name: string; contractURI: string } {
+export function decodeInitData(initData: string): {
+  name: string;
+  contractURI: string;
+  fundingRecipient: string;
+  royaltyBPS: number;
+} {
   try {
     // Strip 4-byte function selector, decode the rest as EditionInitialization tuple
     const encodedArgs = `0x${initData.slice(10)}` as `0x${string}`;
@@ -38,8 +43,13 @@ export function decodeInitData(initData: string): { name: string; contractURI: s
       ] as const,
       encodedArgs
     );
-    return { name: init.name, contractURI: init.contractURI };
+    return {
+      name: init.name,
+      contractURI: init.contractURI,
+      fundingRecipient: init.fundingRecipient.toLowerCase(),
+      royaltyBPS: init.royaltyBPS,
+    };
   } catch {
-    return { name: "", contractURI: "" };
+    return { name: "", contractURI: "", fundingRecipient: "", royaltyBPS: 0 };
   }
 }

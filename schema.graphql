@@ -143,6 +143,8 @@ type Sound_Editions {
   name: String!
   owner: String!
   uri: String!
+  funding_recipient: String!
+  royalty_bps: Int!
   chain_id: Int!
   created_at: Int!
   updated_at: Int!
