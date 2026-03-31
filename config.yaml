@@ -79,10 +79,6 @@ contracts:
   - name: SoundEditionV2_1
     handler: src/EventHandlers.ts
     events:
-      - event: "Minted(uint8 tier, address to, uint256 quantity, uint256 fromTokenId)"
-        field_selection:
-          transaction_fields:
-            - hash
       - event: "RolesUpdated(address indexed user, uint256 indexed roles)"
 
   - name: SoundMetadata

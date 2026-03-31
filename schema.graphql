@@ -149,21 +149,10 @@ type Sound_Editions {
   transaction_hash: String!
 }
 
-type Sound_Tiers {
-  id: ID!
-  collection: String!
-  tier: Int!
-  uri: String!
-  quantity: BigInt!
-  chain_id: Int!
-  updated_at: Int!
-  transaction_hash: String!
-}
-
 type Sound_Moments {
   id: ID!
   collection: String!
-  token_id: BigInt!
+  tier: Int!
   uri: String!
   chain_id: Int!
   created_at: Int!
