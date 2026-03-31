@@ -24,7 +24,7 @@ type InProcess_Moments {
 
 type Primary_Sales {
   id: ID!
-  collection: String!
+  collection: String! @index
   token_id: BigInt!
   price_per_token: BigInt!
   funds_recipient: String!
@@ -32,6 +32,7 @@ type Primary_Sales {
   sale_start: BigInt
   sale_end: BigInt
   max_tokens_per_address: BigInt
+  schedule_num: Int
   chain_id: Int!
   transaction_hash: String!
   created_at: Int!
@@ -143,6 +144,8 @@ type Sound_Editions {
   name: String!
   owner: String!
   uri: String!
+  funding_recipient: String!
+  royalty_bps: Int!
   chain_id: Int!
   created_at: Int!
   updated_at: Int!

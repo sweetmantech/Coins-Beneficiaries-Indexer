@@ -219,24 +219,29 @@ In V2, all mint types are handled by a single **`SuperMinterV2`** contract.
 ```
 MintCreated(
   address indexed edition,
-  uint8 indexed tier,
+  uint8 tier,           // NOT indexed (verified on-chain)
   uint8 scheduleNum,
-  MintCreation c   // { platform, price, startTime, endTime, maxMintablePerAccount,
-                   //   maxMintable, affiliateFeeBPS, mode, merkleRoot, affiliateMerkleRoot }
+  MintCreation c   // tuple field order (verified via ABI):
+                   // edition(address), price(uint96), startTime(uint32), endTime(uint32),
+                   // maxMintablePerAccount(uint32), maxMintable(uint32), affiliateFeeBPS(uint16),
+                   // affiliateMerkleRoot(bytes32), tier(uint8), platform(address),
+                   // mode(uint8), merkleRoot(bytes32)
 )
 ```
 
 **Sale Update Events:**
 
 ```
-PriceSet(address edition, uint8 tier, uint8 scheduleNum, uint96 price)
-TimeRangeSet(address edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)
-MaxMintableSet(address edition, uint8 tier, uint8 scheduleNum, uint32 value)
-MaxMintablePerAccountSet(address edition, uint8 tier, uint8 scheduleNum, uint32 value)
-PausedSet(address edition, uint8 tier, uint8 scheduleNum, bool paused)
-MerkleRootSet(address edition, uint8 tier, uint8 scheduleNum, bytes32 merkleRoot)
+PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)
+TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)
+MaxMintableSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)
+MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)
+PausedSet(address indexed edition, uint8 tier, uint8 scheduleNum, bool paused)
+MerkleRootSet(address indexed edition, uint8 tier, uint8 scheduleNum, bytes32 merkleRoot)
 GAPriceSet(address indexed platform, uint96 price)   // GA price, platform-level
 ```
+
+> **Note on `indexed`:** edition is indexed in all update events. Verified via Basescan ABI (not contract source docs).
 
 **Mint Event (actual purchase):**
 

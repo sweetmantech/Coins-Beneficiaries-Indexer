@@ -36,3 +36,5 @@ build
 .env
 .cursor
 contracts
+config.sound.yaml
+src/EventHandlersSoundOnly.ts
