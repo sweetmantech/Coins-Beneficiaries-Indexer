@@ -4,13 +4,12 @@ import {
   type SoundEditionV2_1_RolesUpdated_handlerArgs,
 } from "generated";
 import { getLatestAdmin } from "@/lib/sound_admins/getLatestAdmin";
-
-const ADMIN_ROLE = 1;
+import { SOUND_ADMIN_ROLE } from "@/lib/consts";
 
 SoundEditionV2_1.RolesUpdated.handler(
   async ({ event, context }: SoundEditionV2_1_RolesUpdated_handlerArgs) => {
     const roles = Number(event.params.roles);
-    const hasAdminRole = (roles & ADMIN_ROLE) !== 0;
+    const hasAdminRole = (roles & SOUND_ADMIN_ROLE) !== 0;
 
     // Skip if only MINTER_ROLE is set without ADMIN_ROLE (exclude minter contract noise)
     if (!hasAdminRole && roles !== 0) return;

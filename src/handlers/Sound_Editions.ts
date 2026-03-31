@@ -1,5 +1,6 @@
 import { decodeInitData } from "../../lib/sound_editions/decodeInitData";
 import { getLatestAdmin } from "@/lib/sound_admins/getLatestAdmin";
+import { SOUND_ADMIN_ROLE } from "@/lib/consts";
 import {
   SoundCreatorV2,
   type Sound_Editions,
@@ -7,8 +8,6 @@ import {
   type SoundCreatorV2_Created_handlerArgs,
   type contractRegistrations,
 } from "generated";
-
-const ADMIN_ROLE = 1;
 
 SoundCreatorV2.Created.contractRegister(
   ({
@@ -45,7 +44,7 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
     collection: address,
     token_id: BigInt(0),
     admin: owner,
-    roles: ADMIN_ROLE,
+    roles: SOUND_ADMIN_ROLE,
     chain_id: event.chainId,
     updated_at: event.block.timestamp,
   };

@@ -1,3 +1,6 @@
+export const SOUND_ADMIN_ROLE = 1;
+export const SOUND_MINTER_ROLE = 2;
+
 export const AUTH_SCOPE_OWNER = 1;
 export const AUTH_SCOPE_ARTIST = 2;
 export const AUTH_SCOPE_MANAGER = 4;
