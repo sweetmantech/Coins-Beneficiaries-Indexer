@@ -49,6 +49,10 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+      - event: AlbumMintConfigurationUpdated (address indexed releaseContract, uint256 indexed albumId, (uint96, address, uint256[]) configuration)
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: CatalogRelease1155
     handler: src/EventHandlers.ts
@@ -64,6 +68,10 @@ contracts:
       - event: ContractPermissionsUpdated (address indexed user, uint256 authScope)
       - event: TokenPermissionsUpdated (uint256 indexed tokenId, address indexed user, uint256 authScope)
       - event: TokenPurchased (uint256 indexed tokenId, uint256 indexed amount, address indexed buyer, address referrer0, address referrer1)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: AlbumPurchased (uint256 indexed albumId, address indexed buyer, address referrer0, address referrer1)
         field_selection:
           transaction_fields:
             - hash
@@ -109,6 +117,10 @@ contracts:
       - event: "PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)"
       - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
       - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
+      - event: "Minted(address indexed edition, uint8 tier, uint8 scheduleNum, address indexed to, (uint32,uint256,address,uint32,uint32,uint32,address,bool,uint256,uint256,uint256,uint256,uint256) data, uint256 indexed attributionId)"
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: InProcessMoment
     handler: src/EventHandlers.ts
