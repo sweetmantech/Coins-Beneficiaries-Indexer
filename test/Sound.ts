@@ -538,7 +538,7 @@ describe("SuperMinterV2.Minted Handler Tests", () => {
     const expected: Collectors = {
       id,
       collection: EDITION,
-      token_id: 0n,
+      token_id: 1n,
       amount: 2n,
       chain_id: event.chainId,
       collector: COLLECTOR.toLowerCase(),

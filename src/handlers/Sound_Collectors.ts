@@ -21,7 +21,7 @@ SuperMinterV2.Minted.handler(async ({ event, context }: SuperMinterV2_Minted_han
   const collectEntity: Collectors = {
     id: `${edition}_${tier}_${event.chainId}_${event.block.number}_${event.logIndex}`,
     collection: edition,
-    token_id: tier,
+    token_id: tier + 1n,
     amount: quantity,
     chain_id: event.chainId,
     collector: event.params.to.toLowerCase(),
@@ -39,7 +39,7 @@ SuperMinterV2.Minted.handler(async ({ event, context }: SuperMinterV2_Minted_han
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
     collection: edition,
     currency: zeroAddress,
-    token_id: tier,
+    token_id: tier + 1n,
     spender: event.params.to.toLowerCase(),
     recipient,
     amount: formatUnits(finalArtistFee, 18),
