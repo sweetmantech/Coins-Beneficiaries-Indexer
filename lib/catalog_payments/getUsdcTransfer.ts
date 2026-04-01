@@ -1,38 +1,46 @@
-import { Address, zeroAddress } from "viem";
-import { CatalogRelease1155_TokenPurchased_event } from "generated";
-import { baseClient, baseSepoliaClient } from "../viem/client";
+import { zeroAddress } from "viem";
+import type { handlerContext, CatalogRelease1155_TokenPurchased_event } from "generated";
 import formatUnits from "../formatUnits";
-import { abi } from "../abi/catalogAbi";
+
+// Matches USDCFixedPriceController constructor defaults (onlyOwner can change)
+const PROTOCOL_FEE_PERCENTAGE = 15n;
+const REFERRAL_REWARD_BPS = 5n;
 
 type Payout = {
-  recipient: Address;
+  recipient: string;
   amount: string;
-};
+} | null;
 
-const getUsdcTransfer = async (event: CatalogRelease1155_TokenPurchased_event): Promise<Payout> => {
-  try {
-    const client = event.chainId === 8453 ? baseClient : baseSepoliaClient;
-    const address = event.srcAddress as Address;
-    const tokenId = event.params.tokenId;
+const getUsdcTransfer = async (
+  event: CatalogRelease1155_TokenPurchased_event,
+  context: handlerContext
+): Promise<Payout> => {
+  const primarySale = await context.Primary_Sales.get(
+    `${event.srcAddress.toLowerCase()}_${event.params.tokenId}_${event.chainId}`
+  );
 
-    const [tokenInfo, tokenPrice] = await client.multicall({
-      contracts: [
-        { address, abi, functionName: "tokenInfo", args: [tokenId] },
-        { address, abi, functionName: "tokenPrice", args: [tokenId] },
-      ],
-    });
+  if (!primarySale) return null;
 
-    const recipient = (tokenInfo.result?.artist ?? zeroAddress) as Address;
-    const amount = formatUnits((tokenPrice.result as bigint) ?? 0n, 6);
+  const recipient = primarySale.funds_recipient;
+  if (recipient === zeroAddress) return null;
 
-    return { recipient, amount };
-  } catch (err) {
-    console.warn("Failed to fetch token info for tx", event.transaction.hash, err);
-    return {
-      recipient: zeroAddress,
-      amount: "0.000000",
-    };
+  const totalValue = primarySale.price_per_token * event.params.amount;
+
+  // artistShare = value * (100 - protocolFee) / 100
+  let artistShare = (totalValue * (100n - PROTOCOL_FEE_PERCENTAGE)) / 100n;
+
+  // referral: deduct if ref0 or ref1 is set
+  const hasReferral =
+    event.params.referrer0 !== zeroAddress || event.params.referrer1 !== zeroAddress;
+  if (hasReferral) {
+    const referralShare = (totalValue * REFERRAL_REWARD_BPS) / 100n;
+    artistShare -= referralShare;
   }
+
+  const amount = formatUnits(artistShare, 6);
+  if (amount === "0.000000") return null;
+
+  return { recipient, amount };
 };
 
 export default getUsdcTransfer;
