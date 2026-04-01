@@ -117,6 +117,16 @@ type Collectors {
   collected_at: Int!
 }
 
+type Catalog_Albums {
+  id: ID! # ${releaseContract}_${albumId}_${chainId}
+  collection: String!
+  album_id: BigInt!
+  token_ids: String! # JSON array: "[1,2,3]"
+  funds_recipient: String!
+  album_price: BigInt!
+  chain_id: Int!
+}
+
 type Catalog_Admins {
   id: ID!
   admin: String!

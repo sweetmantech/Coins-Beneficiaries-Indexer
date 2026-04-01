@@ -2,11 +2,14 @@ import assert from "assert";
 import { TestHelpers } from "generated";
 import type {
   Catalog_Admins,
+  Catalog_Albums,
   Catalog_Collections,
   Catalog_Moments,
   Primary_Sales,
+  Collectors,
+  Payments,
 } from "generated";
-import { encodeFunctionData, maxUint256 } from "viem";
+import { encodeFunctionData, maxUint256, zeroAddress } from "viem";
 import { crFactoryAbi } from "../lib/abi/crFactoryAbi";
 import {
   USDC_ADDRESSES,
@@ -590,6 +593,217 @@ describe("Catalog Event Handler Tests", () => {
       const actualEntity = await mockDbUpdated.entities.Primary_Sales.get(entityId);
 
       assert.equal(actualEntity?.price_per_token, originalPrice, "price should not change");
+    });
+  });
+
+  describe("USDCFixedPriceController.AlbumMintConfigurationUpdated", () => {
+    it("should create Catalog_Albums entity with tokenIds, fundsRecipient, albumPrice", async () => {
+      const mockDb = MockDb.createMockDb();
+      const albumId = 1n;
+      const albumPrice = 10_000_000n; // 10 USDC
+      const fundsRecipient = "0x9999999999999999999999999999999999999999";
+      const tokenIds = [1n, 2n, 3n];
+
+      const event = USDCFixedPriceController.AlbumMintConfigurationUpdated.createMockEvent({
+        releaseContract: COLLECTION,
+        albumId,
+        configuration: [albumPrice, fundsRecipient, tokenIds],
+      });
+
+      const mockDbUpdated =
+        await USDCFixedPriceController.AlbumMintConfigurationUpdated.processEvent({
+          event,
+          mockDb,
+        });
+
+      const collection = COLLECTION.toLowerCase();
+      const entityId = `${collection}_${albumId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.Catalog_Albums.get(entityId);
+
+      const expectedEntity: Catalog_Albums = {
+        id: entityId,
+        collection,
+        album_id: albumId,
+        token_ids: JSON.stringify(tokenIds.map((id) => id.toString())),
+        funds_recipient: fundsRecipient.toLowerCase(),
+        album_price: albumPrice,
+        chain_id: event.chainId,
+      };
+
+      assert.deepEqual(actualEntity, expectedEntity);
+    });
+
+    it("should overwrite existing album config on update", async () => {
+      const albumId = 1n;
+      const collection = COLLECTION.toLowerCase();
+
+      const event = USDCFixedPriceController.AlbumMintConfigurationUpdated.createMockEvent({
+        releaseContract: COLLECTION,
+        albumId,
+        configuration: [20_000_000n, ARTIST, [4n, 5n]],
+      });
+
+      const mockDb = MockDb.createMockDb().entities.Catalog_Albums.set({
+        id: `${collection}_${albumId}_${event.chainId}`,
+        collection,
+        album_id: albumId,
+        token_ids: JSON.stringify(["1", "2", "3"]),
+        funds_recipient: CREATOR.toLowerCase(),
+        album_price: 10_000_000n,
+        chain_id: event.chainId,
+      });
+
+      const mockDbUpdated =
+        await USDCFixedPriceController.AlbumMintConfigurationUpdated.processEvent({
+          event,
+          mockDb,
+        });
+
+      const entityId = `${collection}_${albumId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.Catalog_Albums.get(entityId);
+
+      assert.equal(actualEntity?.album_price, 20_000_000n, "album_price should be updated");
+      assert.equal(
+        actualEntity?.token_ids,
+        JSON.stringify(["4", "5"]),
+        "token_ids should be updated"
+      );
+    });
+  });
+
+  describe("CatalogRelease1155.AlbumPurchased", () => {
+    const albumId = 1n;
+    const albumPrice = 10_000_000n; // 10 USDC
+    const fundsRecipient = "0x9999999999999999999999999999999999999999";
+    const tokenIds = [1n, 2n];
+    const BUYER = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+    const seedAlbum = (mockDb: ReturnType<typeof MockDb.createMockDb>, chainId: number) => {
+      const collection = COLLECTION.toLowerCase();
+      return mockDb.entities.Catalog_Albums.set({
+        id: `${collection}_${albumId}_${chainId}`,
+        collection,
+        album_id: albumId,
+        token_ids: JSON.stringify(tokenIds.map((id) => id.toString())),
+        funds_recipient: fundsRecipient.toLowerCase(),
+        album_price: albumPrice,
+        chain_id: chainId,
+      });
+    };
+
+    it("should create one Collectors entry per tokenId", async () => {
+      const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
+        albumId,
+        buyer: BUYER,
+        referrer0: zeroAddress,
+        referrer1: zeroAddress,
+      });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+
+      const mockDb = seedAlbum(MockDb.createMockDb(), event.chainId);
+      const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
+
+      const collection = COLLECTION.toLowerCase();
+      for (const tokenId of tokenIds) {
+        const entityId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+        const actualEntity = mockDbUpdated.entities.Collectors.get(entityId);
+
+        const expectedEntity: Collectors = {
+          id: entityId,
+          collection,
+          token_id: tokenId,
+          amount: BigInt(1),
+          chain_id: event.chainId,
+          collector: BUYER.toLowerCase(),
+          transaction_hash: event.transaction.hash,
+          collected_at: event.block.timestamp,
+        };
+
+        assert.deepEqual(actualEntity, expectedEntity);
+      }
+    });
+
+    it("should create one Payments entry per tokenId with amount = albumPrice / tokenIds.length", async () => {
+      const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
+        albumId,
+        buyer: BUYER,
+        referrer0: zeroAddress,
+        referrer1: zeroAddress,
+      });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+
+      const mockDb = seedAlbum(MockDb.createMockDb(), event.chainId);
+      const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
+
+      const expectedAmountPerToken = "5.000000"; // 10 USDC / 2 tokens
+
+      for (const tokenId of tokenIds) {
+        const entityId = `${event.chainId}_${event.block.number}_${event.logIndex}_${tokenId}`;
+        const actualEntity = mockDbUpdated.entities.Payments.get(entityId);
+
+        assert.ok(actualEntity, `Payments entity should exist for tokenId ${tokenId}`);
+        assert.equal(
+          actualEntity.amount,
+          expectedAmountPerToken,
+          "amount should be albumPrice / tokenIds.length"
+        );
+        assert.equal(actualEntity.recipient, fundsRecipient.toLowerCase());
+        assert.equal(actualEntity.spender, BUYER.toLowerCase());
+        assert.equal(actualEntity.token_id, tokenId);
+      }
+    });
+
+    it("should return early without creating any entities when album record is missing", async () => {
+      const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
+        albumId,
+        buyer: BUYER,
+        referrer0: zeroAddress,
+        referrer1: zeroAddress,
+      });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+
+      const mockDb = MockDb.createMockDb();
+      const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
+
+      const collection = COLLECTION.toLowerCase();
+      for (const tokenId of tokenIds) {
+        const collectorId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+        const actualCollector = mockDbUpdated.entities.Collectors.get(collectorId);
+        assert.equal(
+          actualCollector,
+          undefined,
+          "no Collectors should be created without album record"
+        );
+      }
+    });
+
+    it("should not create Payments when album price is zero", async () => {
+      const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
+        albumId,
+        buyer: BUYER,
+        referrer0: zeroAddress,
+        referrer1: zeroAddress,
+      });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+
+      const collection = COLLECTION.toLowerCase();
+      const mockDb = MockDb.createMockDb().entities.Catalog_Albums.set({
+        id: `${collection}_${albumId}_${event.chainId}`,
+        collection,
+        album_id: albumId,
+        token_ids: JSON.stringify(tokenIds.map((id) => id.toString())),
+        funds_recipient: fundsRecipient.toLowerCase(),
+        album_price: 0n,
+        chain_id: event.chainId,
+      });
+
+      const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
+
+      for (const tokenId of tokenIds) {
+        const paymentId = `${event.chainId}_${event.block.number}_${event.logIndex}_${tokenId}`;
+        const actualPayment = mockDbUpdated.entities.Payments.get(paymentId);
+        assert.equal(actualPayment, undefined, "no Payments should be created when price is zero");
+      }
     });
   });
 });

@@ -37,4 +37,6 @@ build
 .cursor
 contracts
 config.sound.yaml
+config.catalog.yaml
 src/EventHandlersSoundOnly.ts
+src/CatalogEventHandlers.ts
