@@ -4,8 +4,8 @@ import {
   type Collectors,
   type Payments,
 } from "generated";
-import { zeroAddress } from "viem";
 import formatUnits from "@/lib/formatUnits";
+import { zeroAddress } from "viem";
 
 SuperMinterV2.Minted.handler(async ({ event, context }: SuperMinterV2_Minted_handlerArgs) => {
   const edition = event.params.edition.toLowerCase();
