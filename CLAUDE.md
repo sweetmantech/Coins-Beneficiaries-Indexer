@@ -383,7 +383,10 @@ type Sound_Editions {
   address: String!
   name: String!
   owner: String! # from SoundCreatorV2.Created
-  uri: String! # contractURI from SoundEditionInitialized
+  uri: String! # contractURI — collection metadata (OpenSea etc.)
+  base_uri: String! # token baseURI — edition-level fallback for tokenURI resolution
+  funding_recipient: String!
+  royalty_bps: Int!
   chain_id: Int!
   created_at: Int!
   updated_at: Int!
@@ -392,9 +395,10 @@ type Sound_Editions {
 
 type Sound_Moments {
   id: ID! # ${edition}_${tier}_${chainId}
-  collection: String!
+  collection: String! @index
   tier: Int! # 0=GA, 1+=premium (uint8 category, NOT a token ID)
-  uri: String! # baseURI/${tier} — from SoundMetadata.BaseURISet
+  uri: String! # SoundMetadata per-tier URI if uri_from_metadata=true, else edition base_uri/${tier}
+  uri_from_metadata: Boolean! # true = set by SoundMetadata.BaseURISet; false = edition fallback
   chain_id: Int!
   created_at: Int!
   updated_at: Int!
@@ -406,23 +410,85 @@ type Sound_Moments {
 
 - **tier**: uint8 category (0=GA, 1+=premium). One `Sound_Moments` row per tier per edition.
 - No per-token rows — Sound.xyz tokens are grouped by tier, not tracked individually.
+- `_createTier()` does **not** set a URI — tier creation and URI assignment are separate operations.
+
+#### URI Resolution Design (two-source)
+
+Sound.xyz has two independent URI sources that must be tracked separately:
+
+| Source | Contract | Event | Field |
+|--------|---------|-------|-------|
+| Per-tier URI | `SoundMetadata` (fixed address) | `BaseURISet(address indexed edition, uint8 tier, string uri)` | `Sound_Moments.uri` |
+| Edition fallback URI | `SoundEditionV2_1` (per edition) | `BaseURISet(string baseURI)` | `Sound_Editions.base_uri` |
+
+**On-chain resolution logic** (`SoundMetadata.tokenURI`):
+1. If per-tier URI exists → use it (format: `uri + tokenIndex`)
+2. Else fall back to edition `baseURI` (format: `uri + tokenId + "_" + tier`)
+
+**Indexer mirrors this with `uri_from_metadata`:**
+- `uri_from_metadata = true`: `Sound_Moments.uri` holds the SoundMetadata per-tier URI
+- `uri_from_metadata = false`: `Sound_Moments.uri` holds `Sound_Editions.base_uri/${tier}` at time of creation
+
+When `SoundEditionV2_1.BaseURISet` fires, all Sound_Moments for that edition with `uri_from_metadata = false` are updated via `getWhere.collection.eq(address)` + in-memory filter.
 
 #### URI Format
 
-`SoundMetadata` (separate contract, `0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5`) stores per-tier base URIs.
-
 ```
-BaseURISet(edition, tier=0, uri="ar://...hash/"):
-  Sound_Moments.uri = "ar://...hash/0"
+SoundMetadata.BaseURISet(edition, tier=0, uri="ar://...hash/"):
+  Sound_Moments.uri = "ar://...hash/0"   (uri_from_metadata=true)
 
-BaseURISet(edition, tier=1, uri="ar://...hash2/"):
-  Sound_Moments.uri = "ar://...hash2/1"
+TierCreated with edition base_uri="ar://...fallback/":
+  Sound_Moments.uri = "ar://...fallback/1"   (uri_from_metadata=false)
 ```
+
+#### Two `BaseURISet` Events — Do Not Confuse
+
+There are **two distinct `BaseURISet` events** with different signatures:
+
+| Event                | Contract                         | Signature                                                     |
+| -------------------- | -------------------------------- | ------------------------------------------------------------- |
+| Tier URI (primary)   | `SoundMetadata` (fixed address)  | `BaseURISet(address indexed edition, uint8 tier, string uri)` |
+| Edition fallback URI | `SoundEditionV2_1` (per edition) | `BaseURISet(string baseURI)`                                  |
+
+> **Note on `indexed`:** `tier` in `SoundMetadata.BaseURISet` is **not** indexed on-chain despite appearing `indexed` in source — only 2 topics (sig + edition). Config must NOT mark `tier` as indexed.
+
+#### Tier Creation
+
+- `initialize()` → calls `_createTier()` for each entry in `tierCreations[]` — **no `TierCreated` event emitted**
+- `createTier()` (post-deploy) → calls `_createTier()` + emits `TierCreated(TierCreation creation)`
+- `TierCreation` tuple fields (by index): `[0]=tier, [1]=maxMintableLower, [2]=maxMintableUpper, [3]=cutoffTime, [4]=mintRandomnessEnabled, [5]=isFrozen`
+- Envio decodes the tuple as an array — use `event.params.creation[0]` for tier (named field access does not work)
+- Initial tiers are decoded from `initData` in `SoundCreatorV2.Created` via `lib/sound_editions/decodeInitData.ts`
+
+#### Edition-level `contractURI` — Collection Metadata
+
+`Sound_Editions.uri` is set at initialization from `initData.contractURI` (decoded from `SoundCreatorV2.Created`).
+
+After initialization, updates via `SoundEditionV2_1.setContractURI(string)` emit `ContractURISet(string contractURI)` — **tracked** in `src/handlers/Sound_Editions.ts`.
+
+`Sound_Editions.base_uri` (token baseURI) is separate — set from `initData.baseURI` and updated via `SoundEditionV2_1.BaseURISet(string baseURI)`.
 
 #### Handler Files
 
-- `src/handlers/Sound_Editions.ts` — `SoundCreatorV2.Created` + `SoundEditionV2_1.SoundEditionInitialized`
-- `src/handlers/Sound_Moments.ts` — `SoundMetadata.BaseURISet` (→ Sound_Moments, upsert per tier)
+- `src/handlers/Sound_Editions.ts`
+  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS)
+  - `SoundEditionV2_1.ContractURISet` — update Sound_Editions.uri
+  - `SoundEditionV2_1.BaseURISet` — update Sound_Editions.base_uri + update non-metadata Sound_Moments URIs
+- `src/handlers/Sound_Moments.ts`
+  - `SoundMetadata.BaseURISet` — upsert Sound_Moments per tier (uri_from_metadata=true)
+  - `SoundEditionV2_1.TierCreated` — create Sound_Moments for post-deploy tiers (uri_from_metadata=false, uri from edition base_uri)
+
+#### Envio getWhere Limitation
+
+`context.Entity.getWhere` supports only **single `@index` field** with `eq/gt/lt`. Multi-field AND filtering is not supported. Use `getWhere` on the indexed field then filter in memory:
+
+```typescript
+const moments = await context.Sound_Moments.getWhere.collection.eq(address);
+for (const moment of moments) {
+  if (moment.chain_id !== event.chainId || moment.uri_from_metadata) continue;
+  // ...
+}
+```
 
 #### Config (Base Mainnet 8453)
 

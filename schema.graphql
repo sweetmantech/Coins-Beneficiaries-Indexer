@@ -154,6 +154,7 @@ type Sound_Editions {
   name: String!
   owner: String!
   uri: String!
+  base_uri: String!
   funding_recipient: String!
   royalty_bps: Int!
   chain_id: Int!
@@ -164,9 +165,10 @@ type Sound_Editions {
 
 type Sound_Moments {
   id: ID!
-  collection: String!
+  collection: String! @index
   tier: Int!
   uri: String!
+  uri_from_metadata: Boolean!
   chain_id: Int!
   created_at: Int!
   updated_at: Int!

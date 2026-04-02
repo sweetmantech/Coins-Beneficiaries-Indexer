@@ -4,9 +4,11 @@ import { decodeAbiParameters } from "viem";
 // so contractRegister always misses it. Decode initData from Created instead.
 export function decodeInitData(initData: string): {
   name: string;
+  baseURI: string;
   contractURI: string;
   fundingRecipient: string;
   royaltyBPS: number;
+  tiers: number[];
 } {
   try {
     // Strip 4-byte function selector, decode the rest as EditionInitialization tuple
@@ -45,11 +47,13 @@ export function decodeInitData(initData: string): {
     );
     return {
       name: init.name,
+      baseURI: init.baseURI,
       contractURI: init.contractURI,
       fundingRecipient: init.fundingRecipient.toLowerCase(),
       royaltyBPS: init.royaltyBPS,
+      tiers: init.tierCreations.map((t) => t.tier),
     };
   } catch {
-    return { name: "", contractURI: "", fundingRecipient: "", royaltyBPS: 0 };
+    return { name: "", baseURI: "", contractURI: "", fundingRecipient: "", royaltyBPS: 0, tiers: [] };
   }
 }
