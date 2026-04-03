@@ -3,10 +3,13 @@ import { getLatestAdmin } from "@/lib/sound_admins/getLatestAdmin";
 import { SOUND_ADMIN_ROLE } from "@/lib/consts";
 import {
   SoundCreatorV2,
+  SoundEditionV2_1,
   type Sound_Editions,
   type Sound_Admins,
   type Secondary_Sales,
   type SoundCreatorV2_Created_handlerArgs,
+  type SoundEditionV2_1_ContractURISet_handlerArgs,
+  type SoundEditionV2_1_BaseURISet_handlerArgs,
   type contractRegistrations,
 } from "generated";
 
@@ -25,7 +28,7 @@ SoundCreatorV2.Created.contractRegister(
 SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created_handlerArgs) => {
   const address = event.params.edition.toLowerCase();
   const owner = event.params.owner.toLowerCase();
-  const { name, contractURI, fundingRecipient, royaltyBPS } = decodeInitData(
+  const { name, baseURI, contractURI, fundingRecipient, royaltyBPS } = decodeInitData(
     event.params.initData as string
   );
 
@@ -35,6 +38,7 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
     name,
     owner,
     uri: contractURI,
+    base_uri: baseURI,
     funding_recipient: fundingRecipient,
     royalty_bps: royaltyBPS,
     chain_id: event.chainId,
@@ -69,3 +73,50 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
   const latestAdmin = await getLatestAdmin(adminEntity, context);
   context.Sound_Admins.set(latestAdmin);
 });
+
+SoundEditionV2_1.ContractURISet.handler(
+  async ({ event, context }: SoundEditionV2_1_ContractURISet_handlerArgs) => {
+    const address = event.srcAddress.toLowerCase();
+    const id = `${address}_${event.chainId}`;
+    const existing = await context.Sound_Editions.get(id);
+    if (!existing) return;
+
+    context.Sound_Editions.set({
+      ...existing,
+      uri: event.params.contractURI,
+      updated_at: event.block.timestamp,
+      transaction_hash: event.transaction.hash,
+    });
+  }
+);
+
+SoundEditionV2_1.BaseURISet.handler(
+  async ({ event, context }: SoundEditionV2_1_BaseURISet_handlerArgs) => {
+    const address = event.srcAddress.toLowerCase();
+    const id = `${address}_${event.chainId}`;
+    const existing = await context.Sound_Editions.get(id);
+    if (!existing) return;
+
+    const newBaseURI = event.params.baseURI;
+
+    context.Sound_Editions.set({
+      ...existing,
+      base_uri: newBaseURI,
+      updated_at: event.block.timestamp,
+      transaction_hash: event.transaction.hash,
+    });
+
+    // Update Sound_Moments that were set from edition baseURI (not SoundMetadata)
+    const moments = await context.Sound_Moments.getWhere.collection.eq(address);
+    for (const moment of moments) {
+      if (moment.chain_id !== event.chainId || moment.uri_from_metadata) continue;
+
+      context.Sound_Moments.set({
+        ...moment,
+        uri: `${newBaseURI}/${moment.tier}`,
+        updated_at: event.block.timestamp,
+        transaction_hash: event.transaction.hash,
+      });
+    }
+  }
+);

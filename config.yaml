@@ -96,6 +96,18 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+      - event: "ContractURISet(string contractURI)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "BaseURISet(string baseURI)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "TierCreated((uint8,uint32,uint32,uint32,bool,bool) creation)"
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: SoundMetadata
     handler: src/EventHandlers.ts

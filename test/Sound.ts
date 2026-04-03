@@ -44,6 +44,7 @@ describe("Sound.xyz Handler Tests", () => {
         name: "",
         owner: OWNER.toLowerCase(),
         uri: "",
+        base_uri: "",
         funding_recipient: "",
         royalty_bps: 0,
         chain_id: event.chainId,
@@ -121,6 +122,7 @@ describe("Sound.xyz Handler Tests", () => {
 
       assert.equal(actual?.name, "Test Album");
       assert.equal(actual?.uri, CONTRACT_URI);
+      assert.equal(actual?.base_uri, "");
       assert.equal(actual?.owner, OWNER.toLowerCase());
     });
   });
@@ -148,6 +150,7 @@ describe("Sound.xyz Handler Tests", () => {
         collection: EDITION,
         tier: TIER_FREE,
         uri: `${FREE_BASE_URI}/${TIER_FREE}`,
+        uri_from_metadata: true,
         chain_id: event.chainId,
         created_at: event.block.timestamp,
         updated_at: event.block.timestamp,
@@ -163,6 +166,7 @@ describe("Sound.xyz Handler Tests", () => {
         collection: EDITION,
         tier: TIER_FREE,
         uri: "ar://old/",
+        uri_from_metadata: true,
         chain_id: 8453,
         created_at: 1000,
         updated_at: 1000,
@@ -311,6 +315,7 @@ describe("SuperMinterV2 Handler Tests", () => {
         name: "Test",
         owner: OWNER,
         uri: "",
+        base_uri: "",
         funding_recipient: RECIPIENT,
         royalty_bps: 1000,
         chain_id: 8453,
@@ -575,6 +580,7 @@ describe("SuperMinterV2.Minted Handler Tests", () => {
       name: "Test",
       owner: OWNER,
       uri: "",
+      base_uri: "",
       funding_recipient: FUNDING_RECIPIENT,
       royalty_bps: 1000,
       chain_id: 8453,
@@ -638,6 +644,7 @@ describe("SoundEditionV2_1 Handler Tests", () => {
         name: "Test",
         owner: OWNER,
         uri: "",
+        base_uri: "",
         funding_recipient: zeroAddress,
         royalty_bps: 500,
         chain_id: event.chainId,
@@ -690,6 +697,7 @@ describe("SoundEditionV2_1 Handler Tests", () => {
           collection: EDITION,
           tier: 0,
           uri: "ar://foo/0",
+          uri_from_metadata: true,
           chain_id: 8453,
           created_at: 0,
           updated_at: 0,
@@ -741,6 +749,7 @@ describe("SoundEditionV2_1 Handler Tests", () => {
         name: "Test",
         owner: OWNER,
         uri: "",
+        base_uri: "",
         funding_recipient: RECIPIENT,
         royalty_bps: 500,
         chain_id: event.chainId,
@@ -793,6 +802,229 @@ describe("SoundEditionV2_1 Handler Tests", () => {
       const secondary = await db.entities.Secondary_Sales.get(`${EDITION}_0_${event.chainId}`);
       assert.equal(edition, undefined);
       assert.equal(secondary, undefined);
+    });
+  });
+
+  describe("ContractURISet", () => {
+    it("should update Sound_Editions.uri", async () => {
+      const NEW_URI = "ar://newContractHash/";
+      const event = SoundEditionV2_1.ContractURISet.createMockEvent({
+        contractURI: NEW_URI,
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const mockDb = MockDb.createMockDb().entities.Sound_Editions.set({
+        id: `${EDITION}_${event.chainId}`,
+        address: EDITION,
+        name: "Test",
+        owner: OWNER,
+        uri: "ar://oldContractHash/",
+        base_uri: "",
+        funding_recipient: RECIPIENT,
+        royalty_bps: 1000,
+        chain_id: event.chainId,
+        created_at: 0,
+        updated_at: 0,
+        transaction_hash: "0x00",
+      });
+
+      const db = await SoundEditionV2_1.ContractURISet.processEvent({ event, mockDb });
+
+      const actual = await db.entities.Sound_Editions.get(`${EDITION}_${event.chainId}`);
+      assert.equal(actual?.uri, NEW_URI);
+    });
+
+    it("should do nothing when Sound_Editions does not exist", async () => {
+      const event = SoundEditionV2_1.ContractURISet.createMockEvent({
+        contractURI: "ar://new/",
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const db = await SoundEditionV2_1.ContractURISet.processEvent({
+        event,
+        mockDb: MockDb.createMockDb(),
+      });
+
+      const actual = await db.entities.Sound_Editions.get(`${EDITION}_${event.chainId}`);
+      assert.equal(actual, undefined);
+    });
+  });
+
+  describe("BaseURISet (edition)", () => {
+    it("should update Sound_Editions.base_uri", async () => {
+      const NEW_BASE = "ar://newBase/";
+      const event = SoundEditionV2_1.BaseURISet.createMockEvent({
+        baseURI: NEW_BASE,
+        mockEventData: { chainId: 8453 },
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const mockDb = MockDb.createMockDb().entities.Sound_Editions.set({
+        id: `${EDITION}_8453`,
+        address: EDITION,
+        name: "Test",
+        owner: OWNER,
+        uri: "",
+        base_uri: "ar://oldBase/",
+        funding_recipient: RECIPIENT,
+        royalty_bps: 1000,
+        chain_id: 8453,
+        created_at: 0,
+        updated_at: 0,
+        transaction_hash: "0x00",
+      });
+
+      const db = await SoundEditionV2_1.BaseURISet.processEvent({ event, mockDb });
+
+      const actual = await db.entities.Sound_Editions.get(`${EDITION}_8453`);
+      assert.equal(actual?.base_uri, NEW_BASE);
+    });
+
+    it("should cascade new base_uri to uri_from_metadata=false Moments", async () => {
+      const NEW_BASE = "ar://newBase/";
+      const event = SoundEditionV2_1.BaseURISet.createMockEvent({
+        baseURI: NEW_BASE,
+        mockEventData: { chainId: 8453 },
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const mockDb = MockDb.createMockDb()
+        .entities.Sound_Editions.set({
+          id: `${EDITION}_8453`,
+          address: EDITION,
+          name: "Test",
+          owner: OWNER,
+          uri: "",
+          base_uri: "ar://oldBase/",
+          funding_recipient: RECIPIENT,
+          royalty_bps: 1000,
+          chain_id: 8453,
+          created_at: 0,
+          updated_at: 0,
+          transaction_hash: "0x00",
+        })
+        .entities.Sound_Moments.set({
+          id: `${EDITION}_1_8453`,
+          collection: EDITION,
+          tier: 1,
+          uri: "ar://oldBase//1",
+          uri_from_metadata: false,
+          chain_id: 8453,
+          created_at: 0,
+          updated_at: 0,
+          transaction_hash: "0x00",
+        });
+
+      const db = await SoundEditionV2_1.BaseURISet.processEvent({ event, mockDb });
+
+      const moment = await db.entities.Sound_Moments.get(`${EDITION}_1_8453`);
+      assert.equal(moment?.uri, `${NEW_BASE}/1`);
+    });
+
+    it("should not update uri_from_metadata=true Moments on BaseURISet", async () => {
+      const NEW_BASE = "ar://newBase/";
+      const event = SoundEditionV2_1.BaseURISet.createMockEvent({
+        baseURI: NEW_BASE,
+        mockEventData: { chainId: 8453 },
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const METADATA_URI = "ar://metadataHash/0";
+      const mockDb = MockDb.createMockDb()
+        .entities.Sound_Editions.set({
+          id: `${EDITION}_8453`,
+          address: EDITION,
+          name: "Test",
+          owner: OWNER,
+          uri: "",
+          base_uri: "ar://oldBase/",
+          funding_recipient: RECIPIENT,
+          royalty_bps: 1000,
+          chain_id: 8453,
+          created_at: 0,
+          updated_at: 0,
+          transaction_hash: "0x00",
+        })
+        .entities.Sound_Moments.set({
+          id: `${EDITION}_0_8453`,
+          collection: EDITION,
+          tier: 0,
+          uri: METADATA_URI,
+          uri_from_metadata: true,
+          chain_id: 8453,
+          created_at: 0,
+          updated_at: 0,
+          transaction_hash: "0x00",
+        });
+
+      const db = await SoundEditionV2_1.BaseURISet.processEvent({ event, mockDb });
+
+      const moment = await db.entities.Sound_Moments.get(`${EDITION}_0_8453`);
+      assert.equal(moment?.uri, METADATA_URI); // unchanged
+    });
+  });
+
+  describe("TierCreated", () => {
+    it("should create Sound_Moments with uri_from_metadata=false using edition base_uri", async () => {
+      const BASE_URI = "ar://editionBase/";
+      const TIER = 1;
+
+      const event = SoundEditionV2_1.TierCreated.createMockEvent({
+        creation: [BigInt(TIER), 0n, 100n, 0n, false, false],
+        mockEventData: { chainId: 8453 },
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const mockDb = MockDb.createMockDb().entities.Sound_Editions.set({
+        id: `${EDITION}_8453`,
+        address: EDITION,
+        name: "Test",
+        owner: OWNER,
+        uri: "",
+        base_uri: BASE_URI,
+        funding_recipient: RECIPIENT,
+        royalty_bps: 1000,
+        chain_id: 8453,
+        created_at: 0,
+        updated_at: 0,
+        transaction_hash: "0x00",
+      });
+
+      const db = await SoundEditionV2_1.TierCreated.processEvent({ event, mockDb });
+
+      const actual = await db.entities.Sound_Moments.get(`${EDITION}_${TIER}_8453`);
+      assert.equal(actual?.tier, TIER);
+      assert.equal(actual?.uri, `${BASE_URI}/${TIER}`);
+      assert.equal(actual?.uri_from_metadata, false);
+    });
+
+    it("should not overwrite an existing Sound_Moments row set by SoundMetadata", async () => {
+      const TIER = 0;
+      const EXISTING_URI = "ar://metadataHash/0";
+
+      const event = SoundEditionV2_1.TierCreated.createMockEvent({
+        creation: [BigInt(TIER), 0n, 100n, 0n, false, false],
+        mockEventData: { chainId: 8453 },
+      });
+      (event as { srcAddress: string }).srcAddress = EDITION;
+
+      const mockDb = MockDb.createMockDb().entities.Sound_Moments.set({
+        id: `${EDITION}_${TIER}_8453`,
+        collection: EDITION,
+        tier: TIER,
+        uri: EXISTING_URI,
+        uri_from_metadata: true,
+        chain_id: 8453,
+        created_at: 0,
+        updated_at: 0,
+        transaction_hash: "0x00",
+      });
+
+      const db = await SoundEditionV2_1.TierCreated.processEvent({ event, mockDb });
+
+      const actual = await db.entities.Sound_Moments.get(`${EDITION}_${TIER}_8453`);
+      assert.equal(actual?.uri, EXISTING_URI); // not overwritten
+      assert.equal(actual?.uri_from_metadata, true);
     });
   });
 });
