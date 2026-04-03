@@ -416,16 +416,18 @@ type Sound_Moments {
 
 Sound.xyz has two independent URI sources that must be tracked separately:
 
-| Source | Contract | Event | Field |
-|--------|---------|-------|-------|
-| Per-tier URI | `SoundMetadata` (fixed address) | `BaseURISet(address indexed edition, uint8 tier, string uri)` | `Sound_Moments.uri` |
-| Edition fallback URI | `SoundEditionV2_1` (per edition) | `BaseURISet(string baseURI)` | `Sound_Editions.base_uri` |
+| Source               | Contract                         | Event                                                         | Field                     |
+| -------------------- | -------------------------------- | ------------------------------------------------------------- | ------------------------- |
+| Per-tier URI         | `SoundMetadata` (fixed address)  | `BaseURISet(address indexed edition, uint8 tier, string uri)` | `Sound_Moments.uri`       |
+| Edition fallback URI | `SoundEditionV2_1` (per edition) | `BaseURISet(string baseURI)`                                  | `Sound_Editions.base_uri` |
 
 **On-chain resolution logic** (`SoundMetadata.tokenURI`):
+
 1. If per-tier URI exists → use it (format: `uri + tokenIndex`)
 2. Else fall back to edition `baseURI` (format: `uri + tokenId + "_" + tier`)
 
 **Indexer mirrors this with `uri_from_metadata`:**
+
 - `uri_from_metadata = true`: `Sound_Moments.uri` holds the SoundMetadata per-tier URI
 - `uri_from_metadata = false`: `Sound_Moments.uri` holds `Sound_Editions.base_uri/${tier}` at time of creation
 

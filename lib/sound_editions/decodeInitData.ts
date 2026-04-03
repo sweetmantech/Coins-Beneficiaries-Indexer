@@ -54,6 +54,13 @@ export function decodeInitData(initData: string): {
       tiers: init.tierCreations.map((t) => t.tier),
     };
   } catch {
-    return { name: "", baseURI: "", contractURI: "", fundingRecipient: "", royaltyBPS: 0, tiers: [] };
+    return {
+      name: "",
+      baseURI: "",
+      contractURI: "",
+      fundingRecipient: "",
+      royaltyBPS: 0,
+      tiers: [],
+    };
   }
 }
