@@ -6,7 +6,6 @@ import {
   SoundEditionV2_1,
   type Sound_Editions,
   type Sound_Admins,
-  type Secondary_Sales,
   type SoundCreatorV2_Created_handlerArgs,
   type SoundEditionV2_1_ContractURISet_handlerArgs,
   type SoundEditionV2_1_BaseURISet_handlerArgs,
@@ -28,9 +27,7 @@ SoundCreatorV2.Created.contractRegister(
 SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created_handlerArgs) => {
   const address = event.params.edition.toLowerCase();
   const owner = event.params.owner.toLowerCase();
-  const { name, baseURI, contractURI, fundingRecipient, royaltyBPS } = decodeInitData(
-    event.params.initData as string
-  );
+  const { name, baseURI, contractURI } = decodeInitData(event.params.initData as string);
 
   const edition: Sound_Editions = {
     id: `${address}_${event.chainId}`,
@@ -39,27 +36,12 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
     owner,
     uri: contractURI,
     base_uri: baseURI,
-    funding_recipient: fundingRecipient,
-    royalty_bps: royaltyBPS,
     chain_id: event.chainId,
     created_at: event.block.timestamp,
     updated_at: event.block.timestamp,
     transaction_hash: event.transaction.hash,
   };
   context.Sound_Editions.set(edition);
-
-  // Initialize Secondary_Sales at edition level (token_id=0 = edition-wide)
-  const secondarySale: Secondary_Sales = {
-    id: `${address}_0_${event.chainId}`,
-    collection: address,
-    token_id: BigInt(0),
-    royalty_recipient: fundingRecipient,
-    royalty_bps: royaltyBPS,
-    chain_id: event.chainId,
-    updated_at: event.block.timestamp,
-    transaction_hash: event.transaction.hash,
-  };
-  context.Secondary_Sales.set(secondarySale);
 
   const adminEntity: Sound_Admins = {
     id: `${address}_${event.chainId}_0_${owner}`,
