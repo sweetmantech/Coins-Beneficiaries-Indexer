@@ -6,8 +6,6 @@ export function decodeInitData(initData: string): {
   name: string;
   baseURI: string;
   contractURI: string;
-  fundingRecipient: string;
-  royaltyBPS: number;
   tiers: number[];
 } {
   try {
@@ -49,8 +47,6 @@ export function decodeInitData(initData: string): {
       name: init.name,
       baseURI: init.baseURI,
       contractURI: init.contractURI,
-      fundingRecipient: init.fundingRecipient.toLowerCase(),
-      royaltyBPS: init.royaltyBPS,
       tiers: init.tierCreations.map((t) => t.tier),
     };
   } catch {
@@ -58,8 +54,6 @@ export function decodeInitData(initData: string): {
       name: "",
       baseURI: "",
       contractURI: "",
-      fundingRecipient: "",
-      royaltyBPS: 0,
       tiers: [],
     };
   }
