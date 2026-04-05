@@ -32,6 +32,7 @@ type Primary_Sales {
   sale_start: BigInt
   sale_end: BigInt
   max_tokens_per_address: BigInt
+  schedule_num: Int
   chain_id: Int!
   transaction_hash: String!
   created_at: Int!
@@ -154,6 +155,8 @@ type Sound_Editions {
   owner: String!
   uri: String!
   base_uri: String!
+  funding_recipient: String!
+  royalty_bps: Int!
   chain_id: Int!
   created_at: Int!
   updated_at: Int!
