@@ -117,7 +117,7 @@ contracts:
           transaction_fields:
             - hash
 
-  - name: SuperMinterV2
+  - name: SuperMinterV2Sales
     handler: src/EventHandlers.ts
     events:
       # edition indexed only (tier is NOT indexed — verified on-chain)
@@ -129,6 +129,10 @@ contracts:
       - event: "PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)"
       - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
       - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
+
+  - name: SuperMinterV2Collectors
+    handler: src/EventHandlers.ts
+    events:
       - event: "Minted(address indexed edition, uint8 tier, uint8 scheduleNum, address indexed to, (uint32,uint256,address,uint32,uint32,uint32,address,bool,uint256,uint256,uint256,uint256,uint256) data, uint256 indexed attributionId)"
         field_selection:
           transaction_fields:
@@ -193,8 +197,29 @@ networks:
     start_block: 7272930
     contracts:
       # InProcess
+      #
+      # HISTORICAL DATA CUTOFF NOTE (2026-04-04, ~block 44239100)
+      # ─────────────────────────────────────────────────────────────────────────
+      # Pricing/collector/admin contracts below use start_block: 44239100
+      # (~2026-04-04, approx. 2 days before this change).
+      #
+      # This is an INTENTIONAL decision, not data loss:
+      #   - All historical events for SaleSet (InProcessCreatorFixedPriceSaleStrategy,
+      #     InProcessERC20Minter), MintConfigurationUpdated (USDCFixedPriceController),
+      #     and SuperMinterV2 events (MintCreated, PriceSet, TimeRangeSet,
+      #     MaxMintablePerAccountSet, Minted) prior to block 44239100 have been
+      #     snapshotted into Supabase before this change was applied.
+      #   - Supabase is the source of truth for pre-cutoff records.
+      #   - No backfill will be performed; the indexer tracks only new events
+      #     from block 44239100 onward and merges with the Supabase snapshot.
+      #
+      # Registration contracts (factories, InProcessMoment, CatalogRelease1155,
+      # SoundCreatorV2, SoundEditionV2_1, SoundMetadata) retain their original
+      # start_blocks so that newly deployed collections/editions/moments are
+      # still captured from genesis.
+      # ─────────────────────────────────────────────────────────────────────────
       - name: InProcessERC20Minter
-        start_block: 27712746
+        start_block: 44239100
         address:
           - 0xE27d9Dc88dAB82ACa3ebC49895c663C6a0CfA014
       - name: InProcessCreatorFactory
@@ -204,7 +229,7 @@ networks:
       - name: InProcessMoment
         start_block: 27712746
       - name: InProcessCreatorFixedPriceSaleStrategy
-        start_block: 27712746
+        start_block: 44239100
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
       # Catalog
@@ -213,7 +238,7 @@ networks:
         address:
           - 0x94c2fab68ad0b7ca12e19d37b14ec662633d8025
       - name: USDCFixedPriceController
-        start_block: 18357751
+        start_block: 44239100
         address:
           - 0xbcEaBFcC30a0e050367A6A5FaEa247A43C314709
       - name: CatalogRelease1155
@@ -226,7 +251,11 @@ networks:
       - name: SoundMetadata
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
-      - name: SuperMinterV2
+      - name: SuperMinterV2Sales
+        address:
+          - "0x000000000001A36777f9930aAEFf623771b13e70"
+      - name: SuperMinterV2Collectors
+        start_block: 44239100
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
 
