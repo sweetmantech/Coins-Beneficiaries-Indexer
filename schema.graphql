@@ -32,7 +32,6 @@ type Primary_Sales {
   sale_start: BigInt
   sale_end: BigInt
   max_tokens_per_address: BigInt
-  schedule_num: Int
   chain_id: Int!
   transaction_hash: String!
   created_at: Int!
