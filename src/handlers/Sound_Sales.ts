@@ -12,6 +12,7 @@ import getLatestSale from "@/lib/sound_sales/getLatestSale";
 
 SuperMinterV2.MintCreated.handler(
   async ({ event, context }: SuperMinterV2_MintCreated_handlerArgs) => {
+    if (Number(event.params.creation[10]) !== 0) return; // only DEFAULT (public) mints
     const latestSale = await getLatestSale(event, context);
     context.Primary_Sales.set(latestSale);
   }
