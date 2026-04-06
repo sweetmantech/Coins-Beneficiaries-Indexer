@@ -12,8 +12,7 @@ async function getLatestSale(
 ): Promise<Primary_Sales> {
   const edition = event.params.edition.toLowerCase();
   const tier = event.params.tier;
-  const scheduleNum = event.params.scheduleNum;
-  const entityId = `${edition}_${tier}_${scheduleNum}_${event.chainId}`;
+  const entityId = `${edition}_${tier}_${event.chainId}`;
 
   const existingEntity = await context.Primary_Sales.get(entityId);
 
@@ -32,7 +31,6 @@ async function getLatestSale(
     sale_start: BigInt(creation[2]), // startTime (uint32)
     sale_end: BigInt(creation[3]), // endTime (uint32)
     max_tokens_per_address: BigInt(creation[4]), // maxMintablePerAccount (uint32)
-    schedule_num: Number(scheduleNum),
     chain_id: event.chainId,
     transaction_hash: event.transaction.hash,
     created_at: event.block.timestamp,

@@ -27,7 +27,6 @@ async function getLatestSale(
     price_per_token: event.params.salesConfig[3],
     funds_recipient: event.params.salesConfig[4].toLowerCase(),
     currency: event.params.salesConfig[5] ? event.params.salesConfig[5].toLowerCase() : zeroAddress,
-    schedule_num: undefined,
   };
 
   if (!existingEntity) return newEntity;

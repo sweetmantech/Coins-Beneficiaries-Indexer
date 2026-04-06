@@ -26,7 +26,6 @@ async function getLatestSale(
     sale_start: BigInt(0),
     sale_end: maxUint256,
     max_tokens_per_address: maxUint256,
-    schedule_num: undefined,
     chain_id: event.chainId,
     created_at: event.block.timestamp,
     transaction_hash: event.transaction.hash,
