@@ -194,7 +194,7 @@ networks:
     contracts:
       # InProcess
       - name: InProcessERC20Minter
-        start_block: 27712746
+        start_block: 44239100
         address:
           - 0xE27d9Dc88dAB82ACa3ebC49895c663C6a0CfA014
       - name: InProcessCreatorFactory
@@ -204,7 +204,7 @@ networks:
       - name: InProcessMoment
         start_block: 27712746
       - name: InProcessCreatorFixedPriceSaleStrategy
-        start_block: 27712746
+        start_block: 44239100
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
       # Catalog
@@ -213,7 +213,7 @@ networks:
         address:
           - 0x94c2fab68ad0b7ca12e19d37b14ec662633d8025
       - name: USDCFixedPriceController
-        start_block: 18357751
+        start_block: 44239100
         address:
           - 0xbcEaBFcC30a0e050367A6A5FaEa247A43C314709
       - name: CatalogRelease1155
@@ -227,6 +227,7 @@ networks:
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
       - name: SuperMinterV2
+        start_block: 44239100
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
 
