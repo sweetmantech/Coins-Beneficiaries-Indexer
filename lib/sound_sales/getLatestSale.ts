@@ -1,4 +1,4 @@
-import { handlerContext, Primary_Sales, SuperMinterV2Sales_MintCreated_event } from "generated";
+import { handlerContext, Primary_Sales, SuperMinterV2_MintCreated_event } from "generated";
 import { zeroAddress } from "viem";
 
 // MintCreation tuple field indexes (verified against on-chain ABI):
@@ -7,7 +7,7 @@ import { zeroAddress } from "viem";
 // [7] affiliateMerkleRoot (bytes32), [8] tier (uint8), [9] platform (address)
 // [10] mode (uint8), [11] merkleRoot (bytes32)
 async function getLatestSale(
-  event: SuperMinterV2Sales_MintCreated_event,
+  event: SuperMinterV2_MintCreated_event,
   context: handlerContext
 ): Promise<Primary_Sales> {
   const edition = event.params.edition.toLowerCase();
