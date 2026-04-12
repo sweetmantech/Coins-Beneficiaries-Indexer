@@ -664,6 +664,8 @@ InProcess transfers are assembled in two steps within the same transaction:
 
 Transfer ID for InProcess: `${collection}_${tokenId}_${chainId}_${txHash}` — shared across steps within same tx.
 
+**Why `txHash` in the ID (not `block_number` + `log_index` like Catalog/Sound):** Step 2 runs on **different events and contracts** (`Purchased` on the moment contract, `ERC20RewardsDeposit` on the minter). They do **not** share the `TransferSingle` log index. A mint-keyed ID would force those handlers to guess or persist the mint log’s `(block, logIndex)` just to perform a lookup—tight coupling and easy breakage. Using the **transaction hash as the correlation key** is deliberate: for a given `(collection, tokenId, chainId)` within one tx, all assembly steps read/write the **same** `Transfers` row. Canonical on-chain position is still stored in `transaction_hash`, `block_number`, and `transferred_at` on the entity. Helper: `lib/in_process_transfers/transferId.ts`.
+
 Handler: `src/handlers/In_Process_Transfers.ts`
 
 ### Transfer Type Inference (InProcess only)
