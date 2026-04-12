@@ -85,16 +85,23 @@ SoundEditionV2_1.FundingRecipientSet.handler(
     const chainId = event.chainId;
 
     const edition = await context.Sound_Editions.get(`${address}_${chainId}`);
+    if (!edition) {
+      console.warn(
+        `[FundingRecipientSet] Sound_Editions not found: ${address}_${chainId} tx=${event.transaction.hash}`
+      );
+      return;
+    }
     context.Sound_Editions.set({
-      ...edition!,
+      ...edition,
       funding_recipient: recipient,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
     });
 
     const secondary = await context.Secondary_Sales.get(`${address}_0_${chainId}`);
+    if (!secondary) return;
     context.Secondary_Sales.set({
-      ...secondary!,
+      ...secondary,
       royalty_recipient: recipient,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
@@ -120,16 +127,23 @@ SoundEditionV2_1.RoyaltySet.handler(
     const chainId = event.chainId;
 
     const edition = await context.Sound_Editions.get(`${address}_${chainId}`);
+    if (!edition) {
+      console.warn(
+        `[RoyaltySet] Sound_Editions not found: ${address}_${chainId} tx=${event.transaction.hash}`
+      );
+      return;
+    }
     context.Sound_Editions.set({
-      ...edition!,
+      ...edition,
       royalty_bps: bps,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
     });
 
     const secondary = await context.Secondary_Sales.get(`${address}_0_${chainId}`);
+    if (!secondary) return;
     context.Secondary_Sales.set({
-      ...secondary!,
+      ...secondary,
       royalty_bps: bps,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,

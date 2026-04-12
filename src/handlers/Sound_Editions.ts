@@ -77,9 +77,13 @@ SoundEditionV2_1.ContractURISet.handler(
     const address = event.srcAddress.toLowerCase();
     const id = `${address}_${event.chainId}`;
     const existing = await context.Sound_Editions.get(id);
+    if (!existing) {
+      console.warn(`[ContractURISet] Sound_Editions not found: ${id} tx=${event.transaction.hash}`);
+      return;
+    }
 
     context.Sound_Editions.set({
-      ...existing!,
+      ...existing,
       uri: event.params.contractURI,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
@@ -92,11 +96,15 @@ SoundEditionV2_1.BaseURISet.handler(
     const address = event.srcAddress.toLowerCase();
     const id = `${address}_${event.chainId}`;
     const existing = await context.Sound_Editions.get(id);
+    if (!existing) {
+      console.warn(`[BaseURISet] Sound_Editions not found: ${id} tx=${event.transaction.hash}`);
+      return;
+    }
 
     const newBaseURI = event.params.baseURI;
 
     context.Sound_Editions.set({
-      ...existing!,
+      ...existing,
       base_uri: newBaseURI,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
