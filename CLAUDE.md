@@ -19,15 +19,6 @@ Both protocols use the unified `Primary_Sales` schema.
 - Handler: `src/handlers/Catalog_Sales.ts` → `lib/catalog_sales/getLatestSale.ts`
 - `MintConfigurationUpdated` handles **both initial setup and all updates** (no separate update event)
 
-#### Catalog Album Bundles
-
-- Event: `AlbumMintConfigurationUpdated(address indexed releaseContract, uint256 indexed albumId, (uint96, address, uint256[]) configuration)` from `USDCFixedPriceController`
-- Configuration tuple: `(albumPrice, fundsRecipient, tokenIds[])`
-- Entity ID: `${releaseContract}_${albumId}_${chainId}`
-- `token_ids` stored as JSON array string (`"[\"1\",\"2\",\"3\"]"`)
-- Used by `AlbumPurchased` in `Catalog_Transfers.ts` to expand album purchase into per-token `Transfers` rows
-- Schema: `Catalog_Albums` — fields: `collection, album_id, token_ids, funds_recipient, album_price, chain_id`
-
 ---
 
 ## Secondary Sales (Royalties)
@@ -85,17 +76,6 @@ type Secondary_Sales {
   chain_id, updated_at, transaction_hash
 }
 ```
-
-## Comments
-
-InProcess tracks mint-time comments left by buyers.
-
-- Events: `MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)` from both `InProcessERC20Minter` and `InProcessCreatorFixedPriceSaleStrategy`
-- Entity ID: `${tokenContract}_${tokenId}_${chainId}_${blockNumber}_${logIndex}`
-- Handler: `src/handlers/In_Process_Comments.ts` → `lib/in_process_comments/buildComment.ts`
-- Schema: `InProcess_Comments` — fields: `collection, sender, token_id, comment (nullable), chain_id, commented_at, transaction_hash`
-
----
 
 ## ERC-2981 Royalty Resolution (InProcess/Zora)
 
@@ -325,10 +305,9 @@ Events emitted on the edition contract during minting:
 - Single `fundingRecipient` receives **both** primary proceeds and secondary royalties (same as Catalog)
 - `royaltyBPS` is **configurable** (unlike Catalog's hardcoded 1000)
 - ERC-2981 compliant: `royaltyInfo(tokenId, salePrice)` → `(fundingRecipient, royaltyAmount)`
-- Set at initialization via `SoundCreatorV2.Created` (decoded from `initData`); `Secondary_Sales` row created at `token_id=0`
-- Subsequent update events handled in `src/handlers/Sound_Sales.ts`:
-  - `FundingRecipientSet(address recipient)` — updates `Sound_Editions.funding_recipient`, `Secondary_Sales.royalty_recipient`, and `Primary_Sales.funds_recipient` for all schedules on the edition
-  - `RoyaltySet(uint16 bps)` — updates `Sound_Editions.royalty_bps` and `Secondary_Sales.royalty_bps`
+- Set at initialization via `SoundEditionInitialized`; subsequent update events:
+  - `FundingRecipientSet(address recipient)`
+  - `RoyaltySet(uint16 bps)`
 
 ---
 
@@ -345,11 +324,6 @@ Events emitted on the edition contract during minting:
   - Emits the **full current roles bitmap** whenever roles are granted or revoked
   - `roles = 0` → all permissions revoked
 - Note: No `tokenId` concept unlike InProcess/Zora's `UpdatedPermissions` — roles are edition-level only
-- Handler: `src/handlers/Sound_Admins.ts` → `lib/sound_admins/getLatestAdmin.ts`
-  - Filters: only processes events where `hasAdminRole (roles & 1 !== 0)` or full revocation (`roles = 0`); pure MINTER_ROLE grants are skipped
-  - Entity ID: `${collection}_${chainId}_0_${user}` (`token_id` always 0 = edition-level)
-  - Schema: `Sound_Admins` — fields: `collection, token_id, admin, roles, chain_id, updated_at`
-- On `SoundCreatorV2.Created`: owner is automatically stored as `Sound_Admins` with `roles = ADMIN_ROLE (1)`
 
 ---
 
@@ -499,22 +473,15 @@ After initialization, updates via `SoundEditionV2_1.setContractURI(string)` emit
 #### Handler Files
 
 - `src/handlers/Sound_Editions.ts`
-  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS); registers `SoundEditionV2_1` + `SoundEditionV2_1Transfers`; initializes `Secondary_Sales` (token_id=0) and `Sound_Admins` for owner
+  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS); also registers `SoundEditionV2_1Transfers` contract
   - `SoundEditionV2_1.ContractURISet` — update Sound_Editions.uri
   - `SoundEditionV2_1.BaseURISet` — update Sound_Editions.base_uri + update non-metadata Sound_Moments URIs
 - `src/handlers/Sound_Moments.ts`
   - `SoundMetadata.BaseURISet` — upsert Sound_Moments per tier (uri_from_metadata=true)
   - `SoundEditionV2_1.TierCreated` — create Sound_Moments for post-deploy tiers (uri_from_metadata=false, uri from edition base_uri)
-- `src/handlers/Sound_Sales.ts`
-  - `SuperMinterV2.MintCreated` — create Primary_Sales (DEFAULT mode only, `creation[10] === 0`)
-  - `SuperMinterV2.PriceSet` / `TimeRangeSet` / `MaxMintablePerAccountSet` — update Primary_Sales fields
-  - `SoundEditionV2_1.FundingRecipientSet` — cascade update Sound_Editions + Secondary_Sales + all Primary_Sales for edition
-  - `SoundEditionV2_1.RoyaltySet` — cascade update Sound_Editions + Secondary_Sales
-- `src/handlers/Sound_Admins.ts`
-  - `SoundEditionV2_1.RolesUpdated` — upsert Sound_Admins (admin-only filter)
 - `src/handlers/Sound_Transfers.ts`
-  - `SoundEditionV2_1Transfers.Minted` — all mints; `token_id = tier + 1`
-  - `SoundEditionV2_1Transfers.Airdropped` — all airdrops; per-recipient rows with `_${i}` suffix; `token_id = tier + 1`
+  - `SoundEditionV2_1Transfers.Minted` — all mints (user purchases via SuperMinterV2 + direct admin mints)
+  - `SoundEditionV2_1Transfers.Airdropped` — all airdrops (platform via SuperMinterV2 + direct admin)
 
 #### Envio getWhere Limitation
 
@@ -563,13 +530,9 @@ All token transfer history is unified into a single `Transfers` table. Catalog a
 
 ```graphql
 type Transfers {
-  # ID format differs by protocol:
-  #   InProcess: ${collection}_${token_id}_${chain_id}_${txHash}   (set by TransferSingle; updated by Purchased/ERC20RewardsDeposit)
-  #   Catalog:   ${collection}_${token_id}_${chain_id}_${block_number}_${log_index}
-  #   Sound.xyz: ${collection}_${tier}_${chain_id}_${block_number}_${log_index}[_${i}]   (Airdropped adds recipient index)
-  id: ID!
+  id: ID! # ${collection}_${token_id}_${chain_id}_${block_number}_${log_index}
   collection: String!
-  token_id: BigInt! # Sound.xyz: tier + 1 (not a real token ID)
+  token_id: BigInt!
   chain_id: Int!
   recipient: String! # token receiver
   quantity: BigInt! # token quantity
@@ -583,18 +546,6 @@ type Transfers {
   transferred_at: Int!
 }
 ```
-
-### InProcess — Two-Step Transfer Assembly
-
-InProcess transfers are assembled in two steps within the same transaction:
-
-1. **Step 1 — `TransferSingle`** (on `InProcessMoment`): creates the `Transfers` row with `recipient` and `quantity`; `payer/value/currency/funds_recipient` left as `undefined`. Filtered to mints only (`from = zeroAddress`).
-2. **Step 2a — `Purchased`** (ETH mint on `InProcessMoment`): looks up the row by ID and fills in `payer`, `value`, `currency = zeroAddress`, `funds_recipient` from `Primary_Sales`.
-3. **Step 2b — `ERC20RewardsDeposit`** (ERC20 mint on `InProcessERC20Minter`): same lookup; fills in `payer = recipient` (no buyer address in event), `value = price_per_token × quantity`, `currency`, `funds_recipient` from `Primary_Sales`.
-
-Transfer ID for InProcess: `${collection}_${tokenId}_${chainId}_${txHash}` — shared across steps within same tx.
-
-Handler: `src/handlers/In_Process_Transfers.ts`
 
 ### Transfer Type Inference (InProcess only)
 
@@ -631,8 +582,6 @@ Sound.xyz tracking uses `SoundEditionV2_1Transfers` (a separate contract definit
 | Admin direct `edition.airdrop()`                         | `SoundEditionV2_1.Airdropped` | `Sound_Transfers.ts` |
 
 **Config pattern:** `SoundEditionV2_1` (existing events) and `SoundEditionV2_1Transfers` (Minted + Airdropped only) are two separate contract definitions pointing to the same dynamic contracts — same pattern as the former `SuperMinterV2Sales`/`SuperMinterV2Collectors` split. Both are registered together in `SoundCreatorV2.Created.contractRegister`.
-
----
 
 ---
 
