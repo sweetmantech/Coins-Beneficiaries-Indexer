@@ -19,7 +19,7 @@ USDCFixedPriceController.MintConfigurationUpdated.handler(
       token_id: tokenId,
       price_per_token: event.params.configuration[0],
       funds_recipient: event.params.configuration[1].toLowerCase(),
-      currency: USDC_ADDRESSES[event.chainId] ?? "",
+      currency: USDC_ADDRESSES[event.chainId]!,
       sale_start: BigInt(0),
       sale_end: maxUint256,
       max_tokens_per_address: maxUint256,

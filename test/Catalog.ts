@@ -470,7 +470,7 @@ describe("Catalog Event Handler Tests", () => {
         token_id: tokenId,
         price_per_token: pricePerToken,
         funds_recipient: fundsRecipient.toLowerCase(),
-        currency: USDC_ADDRESSES[event.chainId] ?? "",
+        currency: USDC_ADDRESSES[event.chainId],
         sale_start: BigInt(0),
         sale_end: maxUint256,
         max_tokens_per_address: maxUint256,
