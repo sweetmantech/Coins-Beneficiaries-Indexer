@@ -259,6 +259,7 @@ networks:
           - 0xbcEaBFcC30a0e050367A6A5FaEa247A43C314709
       - name: CatalogRelease1155
         start_block: 18357751
+      # Sound.xyz — network start_block: 7272930 (SoundCreatorV2 deployment)
       - name: SoundCreatorV2
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
