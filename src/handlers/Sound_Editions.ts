@@ -22,6 +22,7 @@ SoundCreatorV2.Created.contractRegister(
     context: contractRegistrations;
   }) => {
     context.addSoundEditionV2_1(event.params.edition);
+    context.addSoundEditionV2_1Transfers(event.params.edition);
   }
 );
 
