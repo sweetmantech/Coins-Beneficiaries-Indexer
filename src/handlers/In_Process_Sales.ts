@@ -4,18 +4,16 @@ import {
   type InProcessERC20Minter_SaleSet_handlerArgs,
   type InProcessCreatorFixedPriceSaleStrategy_SaleSet_handlerArgs,
 } from "generated";
-import getLatestSale from "@/lib/in_process_sales/getLatestSale";
+import { buildSale } from "@/lib/in_process_sales/buildSale";
 
 InProcessERC20Minter.SaleSet.handler(
   async ({ event, context }: InProcessERC20Minter_SaleSet_handlerArgs) => {
-    const latestSale = await getLatestSale(event, context);
-    context.Primary_Sales.set(latestSale);
+    context.Primary_Sales.set(buildSale(event));
   }
 );
 
 InProcessCreatorFixedPriceSaleStrategy.SaleSet.handler(
   async ({ event, context }: InProcessCreatorFixedPriceSaleStrategy_SaleSet_handlerArgs) => {
-    const latestSale = await getLatestSale(event, context);
-    context.Primary_Sales.set(latestSale);
+    context.Primary_Sales.set(buildSale(event));
   }
 );

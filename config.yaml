@@ -8,6 +8,10 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+      - event: MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: InProcessERC20Minter
     handler: src/EventHandlers.ts
@@ -75,6 +79,10 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+      - event: TokenMinted (uint256 indexed tokenId, address indexed artist, uint256 amount)
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: SoundCreatorV2
     handler: src/EventHandlers.ts
@@ -108,6 +116,14 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+      - event: "Minted(uint8 tier, address to, uint256 quantity, uint256 fromTokenId)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "Airdropped(uint8 tier, address[] to, uint256 quantity, uint256 fromTokenId)"
+        field_selection:
+          transaction_fields:
+            - hash
 
   - name: SoundMetadata
     handler: src/EventHandlers.ts
@@ -117,7 +133,7 @@ contracts:
           transaction_fields:
             - hash
 
-  - name: SuperMinterV2Sales
+  - name: SuperMinterV2
     handler: src/EventHandlers.ts
     events:
       # edition indexed only (tier is NOT indexed — verified on-chain)
@@ -129,14 +145,6 @@ contracts:
       - event: "PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)"
       - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
       - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
-
-  - name: SuperMinterV2Collectors
-    handler: src/EventHandlers.ts
-    events:
-      - event: "Minted(address indexed edition, uint8 tier, uint8 scheduleNum, address indexed to, (uint32,uint256,address,uint32,uint32,uint32,address,bool,uint256,uint256,uint256,uint256,uint256) data, uint256 indexed attributionId)"
-        field_selection:
-          transaction_fields:
-            - hash
 
   - name: InProcessMoment
     handler: src/EventHandlers.ts
@@ -200,15 +208,19 @@ networks:
       #
       # HISTORICAL DATA CUTOFF NOTE (2026-04-04, ~block 44239100)
       # ─────────────────────────────────────────────────────────────────────────
-      # Pricing/collector/admin contracts below use start_block: 44239100
+      # Pricing/transfer contracts below use start_block: 44239100
       # (~2026-04-04, approx. 2 days before this change).
       #
       # This is an INTENTIONAL decision, not data loss:
       #   - All historical events for SaleSet (InProcessCreatorFixedPriceSaleStrategy,
       #     InProcessERC20Minter), MintConfigurationUpdated (USDCFixedPriceController),
       #     and SuperMinterV2 events (MintCreated, PriceSet, TimeRangeSet,
-      #     MaxMintablePerAccountSet, Minted) prior to block 44239100 have been
+      #     MaxMintablePerAccountSet) prior to block 44239100 have been
       #     snapshotted into Supabase before this change was applied.
+      #   - SoundEditionV2_1Transfers (Minted, Airdropped) also starts at
+      #     44239100. Historical Sound transfer data prior to that block was
+      #     captured via the pre-refactoring SuperMinterV2.Minted snapshot in
+      #     Supabase, so no data is lost.
       #   - Supabase is the source of truth for pre-cutoff records.
       #   - No backfill will be performed; the indexer tracks only new events
       #     from block 44239100 onward and merges with the Supabase snapshot.
@@ -243,19 +255,15 @@ networks:
           - 0xbcEaBFcC30a0e050367A6A5FaEa247A43C314709
       - name: CatalogRelease1155
         start_block: 18357751
-      # Sound.xyz — network start_block: 7272930 (SoundCreatorV2 deployment)
       - name: SoundCreatorV2
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
+        start_block: 44239100
       - name: SoundMetadata
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
-      - name: SuperMinterV2Sales
-        address:
-          - "0x000000000001A36777f9930aAEFf623771b13e70"
-      - name: SuperMinterV2Collectors
-        start_block: 44239100
+      - name: SuperMinterV2
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
 

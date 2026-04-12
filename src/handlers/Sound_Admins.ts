@@ -3,7 +3,6 @@ import {
   type Sound_Admins,
   type SoundEditionV2_1_RolesUpdated_handlerArgs,
 } from "generated";
-import { getLatestAdmin } from "@/lib/sound_admins/getLatestAdmin";
 import { SOUND_ADMIN_ROLE } from "@/lib/consts";
 
 SoundEditionV2_1.RolesUpdated.handler(
@@ -25,7 +24,6 @@ SoundEditionV2_1.RolesUpdated.handler(
       updated_at: event.block.timestamp,
     };
 
-    const latestAdmin = await getLatestAdmin(entity, context);
-    context.Sound_Admins.set(latestAdmin);
+    context.Sound_Admins.set(entity);
   }
 );

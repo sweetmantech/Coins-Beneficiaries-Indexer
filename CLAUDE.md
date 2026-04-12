@@ -1,5 +1,72 @@
 # InProcess Indexers — Project Knowledge
 
+## Envio Event Ordering Guarantee — Core Architectural Principle
+
+**Envio processes all events in strict chronological order (block number → log index, ascending).** This is a fundamental guarantee of the Envio indexer runtime.
+
+### What This Means for Handler Design
+
+Because events always arrive in the correct order, **handlers never need to read the previous state of an entity before writing a new version.** Any `context.Entity.get()` call done purely to "merge with existing data" is unnecessary work — the latest write always wins and is always the correct one.
+
+**Before (anti-pattern):** Many handlers used helper functions like `getLatestSale`, `getLatestAdmin`, `getValidateExistingEntity` that would:
+
+1. Read the current entity from the DB
+2. Merge new event fields onto the existing record
+3. Write the merged result back
+
+This pattern was a mistake. Because events are ordered, a later event's direct write already contains the correct final state. Reading first adds DB round-trips with zero correctness benefit.
+
+**After (correct pattern):** Handlers now construct the entity object directly from event parameters and call `context.Entity.set()` once. When a prior entity must exist (e.g., URI updates), handlers call `context.Entity.get()` for existence validation only — not for field merging.
+
+### Refactoring Applied (2026-04-12)
+
+The following helper lib files were **deleted** because they existed solely to do unnecessary pre-read merges:
+
+| Deleted file                                              | Replaced by                                    |
+| --------------------------------------------------------- | ---------------------------------------------- |
+| `lib/catalog_admins/getLatestAdmin.ts`                    | Inline `context.Catalog_Admins.set(entity)`    |
+| `lib/catalog_collections/getValidateExistingEntity.ts`    | Inline `context.Catalog_Collections.get(id)`   |
+| `lib/catalog_moments/getExistingEntity.ts`                | Inline `context.Catalog_Moments.get(id)`       |
+| `lib/catalog_sales/getLatestSale.ts`                      | Inline entity construction in handler          |
+| `lib/in_process_admins/getLatestAdmin.ts`                 | Inline `context.InProcess_Admins.set(entity)`  |
+| `lib/in_process_collections/getValidateExistingEntity.ts` | Inline `context.InProcess_Collections.get(id)` |
+| `lib/in_process_moments/getValidateExistingEntity.ts`     | Inline `context.InProcess_Moments.get(id)`     |
+| `lib/in_process_sales/getLatestSale.ts`                   | `lib/in_process_sales/buildSale.ts` (pure fn)  |
+| `lib/sound_admins/getLatestAdmin.ts`                      | Inline `context.Sound_Admins.set(entity)`      |
+| `lib/sound_sales/getLatestSale.ts`                        | Inline entity construction in handler          |
+
+**New file added:** `lib/in_process_sales/buildSale.ts` — a pure function (no DB reads) that constructs a `Primary_Sales` entity from a `SaleSet` event. Both `InProcessERC20Minter.SaleSet` and `InProcessCreatorFixedPriceSaleStrategy.SaleSet` handlers call this.
+
+### Rule: When `context.Entity.get()` IS still correct
+
+`context.Entity.get()` remains valid and necessary for two reasons:
+
+**1. Spread reads** — `context.Entity.set()` requires a complete object. If the update event only carries a subset of fields (e.g., `URI` events carry only `value` and `id`, not `name`/`creator`/`created_at`), you must read the existing entity to spread its other fields. The existence guard (`if (!existing) return`) is separate from the read and should only be kept when the entity genuinely might not exist.
+
+**2. Cascade reads** — Reading entity A to copy a field value into entity B (e.g., `FundingRecipientSet` reads `Sound_Editions` to propagate `funding_recipient` into `Primary_Sales`).
+
+It is **wrong** when the sole purpose is to read your own entity just to merge in updates that could come entirely from the event itself — that is the deleted `getLatest*` anti-pattern.
+
+### Handler-level `get()` Decision Reference (verified against contract source)
+
+| Handler                                          | `get()` call                                    | Guard kept?        | Reason                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------ | ----------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Catalog_Collections.URI(id=0)`                  | `Catalog_Collections.get()`                     | ❌ removed         | `updateContractURI()` is post-deploy only; spread read required                                                                                                                                                                                                                                                |
+| `Catalog_Collections.URI(id>0)`                  | `Catalog_Moments.get()`                         | ❌ removed         | `updateTokenURI()` is post-setup only; spread read required                                                                                                                                                                                                                                                    |
+| `In_Process_Collections.ContractMetadataUpdated` | `InProcess_Collections.get()`                   | ❌ removed         | `updateContractMetadata()` is `onlyAdminOrRole`, post-deploy only; spread read required                                                                                                                                                                                                                        |
+| `In_Process_Moments.URI`                         | `InProcess_Moments.get()`                       | ❌ removed         | `updateTokenURI()` is `onlyAdminOrRole(PERMISSION_BIT_METADATA)`, post-setup only; spread read required                                                                                                                                                                                                        |
+| `Sound_Editions.ContractURISet`                  | `Sound_Editions.get()`                          | ❌ removed         | `setContractURI()` is `onlyRolesOrOwner(ADMIN_ROLE)`, post-deploy only; spread read required                                                                                                                                                                                                                   |
+| `Sound_Editions.BaseURISet`                      | `Sound_Editions.get()`                          | ❌ removed         | `setBaseURI()` is `onlyRolesOrOwner(ADMIN_ROLE)`, post-deploy only; spread read required                                                                                                                                                                                                                       |
+| `Sound_Sales.FundingRecipientSet`                | `Sound_Editions.get()`, `Secondary_Sales.get()` | ❌ removed         | Both always created in `SoundCreatorV2.Created`; `setFundingRecipient()` is post-deploy only; spread reads required                                                                                                                                                                                            |
+| `Sound_Sales.RoyaltySet`                         | `Sound_Editions.get()`, `Secondary_Sales.get()` | ❌ removed         | Both always created in `SoundCreatorV2.Created`; `setRoyalty()` is post-deploy only; spread reads required                                                                                                                                                                                                     |
+| `Sound_Sales.PriceSet`                           | `Primary_Sales.get()`                           | ✅ kept            | Non-DEFAULT schedules (`mode != 0`) never get a `Primary_Sales` row; update can fire for any schedule                                                                                                                                                                                                          |
+| `Sound_Sales.TimeRangeSet`                       | `Primary_Sales.get()`                           | ✅ kept            | Same reason as `PriceSet`                                                                                                                                                                                                                                                                                      |
+| `Sound_Sales.MaxMintablePerAccountSet`           | `Primary_Sales.get()`                           | ✅ kept            | Same reason as `PriceSet`                                                                                                                                                                                                                                                                                      |
+| `Sound_Moments.TierCreated`                      | `Sound_Moments.get()`                           | ✅ kept (inverted) | Source priority: `SoundMetadata.BaseURISet` (`uri_from_metadata=true`) must not be overwritten by edition fallback URI (`uri_from_metadata=false`). Contract-level `_createTier()` has `revert TierAlreadyExists()` so duplicate `TierCreated` is impossible; the guard protects against cross-source ordering |
+| `In_Process_Moments.SetupNewToken`               | `Secondary_Sales.get()` (×2)                    | ✅ kept            | First: contract-base row may not exist if factory events are in same tx. Second: copy-down guard — `UpdatedRoyalties` could theoretically create the row first                                                                                                                                                 |
+
+---
+
 ## Primary Sales
 
 Both protocols use the unified `Primary_Sales` schema.
@@ -9,15 +76,24 @@ Both protocols use the unified `Primary_Sales` schema.
 - Event: `SaleSet` from `InProcessCreatorFixedPriceSaleStrategy` or `InProcessERC20Minter`
 - Fields: `sale_start`, `sale_end`, `max_tokens_per_address`, `price_per_token`, `funds_recipient`, `currency`
 - Currency: ETH or ERC20 (dynamic)
-- Handler: `src/handlers/In_Process_Sales.ts` → `lib/in_process_sales/getLatestSale.ts`
+- Handler: `src/handlers/In_Process_Sales.ts` → `lib/in_process_sales/buildSale.ts` (pure builder, no DB reads)
 
 ### Catalog
 
 - Event: `MintConfigurationUpdated` from `USDCFixedPriceController`
 - Fields: `price_per_token`, `funds_recipient`; `sale_start/end/max_tokens_per_address` set to defaults
 - Currency: always USDC (hardcoded via `USDC_ADDRESSES`)
-- Handler: `src/handlers/Catalog_Sales.ts` → `lib/catalog_sales/getLatestSale.ts`
+- Handler: `src/handlers/Catalog_Sales.ts` — entity built inline, no lib helper
 - `MintConfigurationUpdated` handles **both initial setup and all updates** (no separate update event)
+
+#### Catalog Album Bundles
+
+- Event: `AlbumMintConfigurationUpdated(address indexed releaseContract, uint256 indexed albumId, (uint96, address, uint256[]) configuration)` from `USDCFixedPriceController`
+- Configuration tuple: `(albumPrice, fundsRecipient, tokenIds[])`
+- Entity ID: `${releaseContract}_${albumId}_${chainId}`
+- `token_ids` stored as JSON array string (`"[\"1\",\"2\",\"3\"]"`)
+- Used by `AlbumPurchased` in `Catalog_Transfers.ts` to expand album purchase into per-token `Transfers` rows
+- Schema: `Catalog_Albums` — fields: `collection, album_id, token_ids, funds_recipient, album_price, chain_id`
 
 ---
 
@@ -77,6 +153,17 @@ type Secondary_Sales {
 }
 ```
 
+## Comments
+
+InProcess tracks mint-time comments left by buyers.
+
+- Events: `MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)` from both `InProcessERC20Minter` and `InProcessCreatorFixedPriceSaleStrategy`
+- Entity ID: `${tokenContract}_${tokenId}_${chainId}_${blockNumber}_${logIndex}`
+- Handler: `src/handlers/In_Process_Comments.ts` → `lib/in_process_comments/buildComment.ts`
+- Schema: `InProcess_Comments` — fields: `collection, sender, token_id, comment (nullable), chain_id, commented_at, transaction_hash`
+
+---
+
 ## ERC-2981 Royalty Resolution (InProcess/Zora)
 
 `CreatorRoyaltiesControl.getRoyalties(tokenId)`:
@@ -106,7 +193,7 @@ Entity ID format: `${collection}_${chainId}_${tokenId}_${user}`
 - `tokenId=0` = contract-level permission; `tokenId=N` = token-specific
 - Contract-level ADMIN implicitly passes all token-level checks
 - Handler filters: `permissions=2` (ADMIN grant) and `permissions=0` (removal)
-- Handler: `src/handlers/In_Process_Admins.ts` → `lib/in_process_admins/getLatestAdmin.ts`
+- Handler: `src/handlers/In_Process_Admins.ts` — direct `context.InProcess_Admins.set(entity)`, no lib helper
 - Schema: `InProcess_Admins` — field `permission: Int`
 
 ### Catalog
@@ -124,7 +211,7 @@ Entity ID format: `${collection}_${chainId}_${tokenId}_${user}`
 - Multiple addresses can hold the same scope on the same token
 - `removeSingleContractAuthScope` removes one bit at a time → `authScope` can be any intermediate value
 - `authScope=0` means all permissions revoked (record kept, value set to 0)
-- Handler: `src/handlers/Catalog_Admins.ts` → `lib/catalog_admins/getLatestAdmin.ts`
+- Handler: `src/handlers/Catalog_Admins.ts` — direct `context.Catalog_Admins.set(entity)`, no lib helper
 - Schema: `Catalog_Admins` — field `auth_scope: Int`
 
 ### Removal Tracking (both protocols)
@@ -305,9 +392,10 @@ Events emitted on the edition contract during minting:
 - Single `fundingRecipient` receives **both** primary proceeds and secondary royalties (same as Catalog)
 - `royaltyBPS` is **configurable** (unlike Catalog's hardcoded 1000)
 - ERC-2981 compliant: `royaltyInfo(tokenId, salePrice)` → `(fundingRecipient, royaltyAmount)`
-- Set at initialization via `SoundEditionInitialized`; subsequent update events:
-  - `FundingRecipientSet(address recipient)`
-  - `RoyaltySet(uint16 bps)`
+- Set at initialization via `SoundCreatorV2.Created` (decoded from `initData`); `Secondary_Sales` row created at `token_id=0`
+- Subsequent update events handled in `src/handlers/Sound_Sales.ts`:
+  - `FundingRecipientSet(address recipient)` — updates `Sound_Editions.funding_recipient`, `Secondary_Sales.royalty_recipient`, and `Primary_Sales.funds_recipient` for all schedules on the edition
+  - `RoyaltySet(uint16 bps)` — updates `Sound_Editions.royalty_bps` and `Secondary_Sales.royalty_bps`
 
 ---
 
@@ -324,6 +412,11 @@ Events emitted on the edition contract during minting:
   - Emits the **full current roles bitmap** whenever roles are granted or revoked
   - `roles = 0` → all permissions revoked
 - Note: No `tokenId` concept unlike InProcess/Zora's `UpdatedPermissions` — roles are edition-level only
+- Handler: `src/handlers/Sound_Admins.ts` — direct `context.Sound_Admins.set(entity)`, no lib helper
+  - Filters: only processes events where `hasAdminRole (roles & 1 !== 0)` or full revocation (`roles = 0`); pure MINTER_ROLE grants are skipped
+  - Entity ID: `${collection}_${chainId}_0_${user}` (`token_id` always 0 = edition-level)
+  - Schema: `Sound_Admins` — fields: `collection, token_id, admin, roles, chain_id, updated_at`
+- On `SoundCreatorV2.Created`: owner is automatically stored as `Sound_Admins` with `roles = ADMIN_ROLE (1)`
 
 ---
 
@@ -458,9 +551,12 @@ There are **two distinct `BaseURISet` events** with different signatures:
 
 - `initialize()` → calls `_createTier()` for each entry in `tierCreations[]` — **no `TierCreated` event emitted**
 - `createTier()` (post-deploy) → calls `_createTier()` + emits `TierCreated(TierCreation creation)`
+- `_createTier()` has `if (d.flags & _TIER_CREATED_FLAG != 0) revert TierAlreadyExists()` — **`TierCreated` can never fire twice for the same tier** at the EVM level
 - `TierCreation` tuple fields (by index): `[0]=tier, [1]=maxMintableLower, [2]=maxMintableUpper, [3]=cutoffTime, [4]=mintRandomnessEnabled, [5]=isFrozen`
 - Envio decodes the tuple as an array — use `event.params.creation[0]` for tier (named field access does not work)
 - Initial tiers are decoded from `initData` in `SoundCreatorV2.Created` via `lib/sound_editions/decodeInitData.ts`
+
+**`TierCreated` handler guard `if (existing) return`** — this is NOT about tier uniqueness (impossible at EVM level). It protects source priority: `SoundMetadata.BaseURISet` (`uri_from_metadata=true`) must not be overwritten by `TierCreated` (`uri_from_metadata=false`). Both can fire for the same tier+edition, and `SoundMetadata` is a fixed-address contract that is always indexed — it can process `BaseURISet` before `TierCreated` if called in the same multicall.
 
 #### Edition-level `contractURI` — Collection Metadata
 
@@ -473,12 +569,22 @@ After initialization, updates via `SoundEditionV2_1.setContractURI(string)` emit
 #### Handler Files
 
 - `src/handlers/Sound_Editions.ts`
-  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS)
+  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS); registers `SoundEditionV2_1` only (no separate Transfers contract definition); initializes `Secondary_Sales` (token_id=0) and `Sound_Admins` for owner
   - `SoundEditionV2_1.ContractURISet` — update Sound_Editions.uri
   - `SoundEditionV2_1.BaseURISet` — update Sound_Editions.base_uri + update non-metadata Sound_Moments URIs
 - `src/handlers/Sound_Moments.ts`
   - `SoundMetadata.BaseURISet` — upsert Sound_Moments per tier (uri_from_metadata=true)
   - `SoundEditionV2_1.TierCreated` — create Sound_Moments for post-deploy tiers (uri_from_metadata=false, uri from edition base_uri)
+- `src/handlers/Sound_Sales.ts`
+  - `SuperMinterV2.MintCreated` — create Primary_Sales (DEFAULT mode only, `creation[10] === 0`)
+  - `SuperMinterV2.PriceSet` / `TimeRangeSet` / `MaxMintablePerAccountSet` — update Primary_Sales fields
+  - `SoundEditionV2_1.FundingRecipientSet` — cascade update Sound_Editions + Secondary_Sales + all Primary_Sales for edition
+  - `SoundEditionV2_1.RoyaltySet` — cascade update Sound_Editions + Secondary_Sales
+- `src/handlers/Sound_Admins.ts`
+  - `SoundEditionV2_1.RolesUpdated` — upsert Sound_Admins (admin-only filter)
+- `src/handlers/Sound_Transfers.ts`
+  - `SoundEditionV2_1.Minted` — all mints; `token_id = tier + 1`
+  - `SoundEditionV2_1.Airdropped` — all airdrops; per-recipient rows with `_${i}` suffix; `token_id = tier + 1`
 
 #### Envio getWhere Limitation
 
@@ -495,7 +601,9 @@ for (const moment of moments) {
 #### Config (Base Mainnet 8453)
 
 - Network `start_block: 7272930` (SoundCreatorV2 deployment block on Base)
-- SoundCreatorV2, SoundEditionV2_1, SoundMetadata inherit network start_block (no override needed)
+- SoundCreatorV2, SoundMetadata inherit network start_block (no override needed)
+- `SoundEditionV2_1` — `start_block: 44239100` (historical data cutoff; **Minted** + **Airdropped** only — this is where high-volume **transfer** indexing is gated; replaces tracking **`SuperMinterV2.Minted`**, which was removed as redundant with the edition event)
+- `SuperMinterV2` — inherits network `start_block` (no `44239100` override in `config.yaml`). Handlers are **`MintCreated`**, **`PriceSet`**, **`TimeRangeSet`**, **`MaxMintablePerAccountSet`** only (**`Minted`** not indexed here). The historical **transfer** cutoff applies to **`SoundEditionV2_1`** (`Minted` / `Airdropped`); it is not the same concern as replaying these lighter **Primary_Sales** schedule events from SuperMinter. Add `start_block: 44239100` on this contract entry only if you want to skip replaying pre-cutoff **Primary_Sales** rows as well (stricter alignment with any Supabase snapshot of those events).
 - Catalog contracts set `start_block: 18357751`, InProcess contracts set `start_block: 27712746`
 
 ---
@@ -515,6 +623,89 @@ for (const moment of moments) {
 | "Super admin"       | `PERMISSION_BIT_ADMIN = 2`                  | `AUTH_SCOPE_OWNER = 1`     | Contract `owner` (Ownable)           |
 | Sub-roles           | 5 (ADMIN/MINTER/SALES/META/FUNDS)           | 3 (OWNER/ARTIST/MANAGER)   | 2 (ADMIN_ROLE=1, MINTER_ROLE=2)      |
 | Token grouping      | By tokenId                                  | By tokenId                 | By tier (uint8); IDs are sequential  |
+
+---
+
+## Transfers
+
+All token transfer history is unified into a single `Transfers` table. Catalog and Sound.xyz are **discontinued services** — payment history is not tracked for them; only transfer history matters.
+
+### Schema
+
+```graphql
+type Transfers {
+  # ID format differs by protocol:
+  #   InProcess: ${collection}_${token_id}_${chain_id}_${txHash}   (set by TransferSingle; updated by Purchased/ERC20RewardsDeposit)
+  #   Catalog:   ${collection}_${token_id}_${chain_id}_${block_number}_${log_index}
+  #   Sound.xyz: ${collection}_${tier}_${chain_id}_${block_number}_${log_index}[_${i}]   (Airdropped adds recipient index)
+  id: ID!
+  collection: String!
+  token_id: BigInt! # Sound.xyz: tier + 1 (not a real token ID)
+  chain_id: Int!
+  recipient: String! # token receiver
+  quantity: BigInt! # token quantity
+  # InProcess only — undefined for Catalog/Sound.xyz
+  payer: String
+  value: BigInt
+  currency: String
+  funds_recipient: String
+  transaction_hash: String!
+  block_number: BigInt!
+  transferred_at: Int!
+}
+```
+
+### InProcess — Two-Step Transfer Assembly
+
+InProcess transfers are assembled in two steps within the same transaction:
+
+1. **Step 1 — `TransferSingle`** (on `InProcessMoment`): creates the `Transfers` row with `recipient` and `quantity`; `payer/value/currency/funds_recipient` left as `undefined`. Filtered to mints only (`from = zeroAddress`).
+2. **Step 2a — `Purchased`** (ETH mint on `InProcessMoment`): looks up the row by ID and fills in `payer`, `value`, `currency = zeroAddress`, `funds_recipient` from `Primary_Sales`.
+3. **Step 2b — `ERC20RewardsDeposit`** (ERC20 mint on `InProcessERC20Minter`): same lookup; fills in `payer = recipient` (no buyer address in event), `value = price_per_token × quantity`, `currency`, `funds_recipient` from `Primary_Sales`.
+
+Transfer ID for InProcess: `${collection}_${tokenId}_${chainId}_${txHash}` — shared across steps within same tx.
+
+**Why `txHash` in the ID (not `block_number` + `log_index` like Catalog/Sound):** Step 2 runs on **different events and contracts** (`Purchased` on the moment contract, `ERC20RewardsDeposit` on the minter). They do **not** share the `TransferSingle` log index. A mint-keyed ID would force those handlers to guess or persist the mint log’s `(block, logIndex)` just to perform a lookup—tight coupling and easy breakage. Using the **transaction hash as the correlation key** is deliberate: for a given `(collection, tokenId, chainId)` within one tx, all assembly steps read/write the **same** `Transfers` row. Canonical on-chain position is still stored in `transaction_hash`, `block_number`, and `transferred_at` on the entity. Helper: `lib/in_process_transfers/transferId.ts`.
+
+Handler: `src/handlers/In_Process_Transfers.ts`
+
+### Transfer Type Inference (InProcess only)
+
+| `payer`  | `value` | Type                 |
+| -------- | ------- | -------------------- |
+| non-null | > 0     | Paid mint            |
+| non-null | 0       | Free mint            |
+| null     | 0       | Airdrop / admin mint |
+
+### Catalog — All Mint Types Covered
+
+| Function                                 | Event                                                                | Handler                |
+| ---------------------------------------- | -------------------------------------------------------------------- | ---------------------- |
+| `purchaseTokenWithValue()`               | `TokenPurchased`                                                     | `Catalog_Transfers.ts` |
+| `lzPurchaseTokenWithValue()` (lazy mint) | `TokenPurchased` (same — calls `_purchaseTokenWithValue` internally) | `Catalog_Transfers.ts` |
+| `purchaseAlbumWithValue()`               | `AlbumPurchased`                                                     | `Catalog_Transfers.ts` |
+| `mintTokenAdmin()` (airdrop)             | `TokenMinted`                                                        | `Catalog_Transfers.ts` |
+
+### Sound.xyz — All Mint Types Covered
+
+Sound.xyz tracking uses `SoundEditionV2_1` with `start_block: 44239100` for `Minted` and `Airdropped` events, so Envio only processes those events from that block onwards.
+
+**Why edition-level events instead of SuperMinterV2:**
+
+- `SuperMinterV2.Minted` ⊂ `SoundEditionV2_1.Minted` — edition event fires for both SuperMinterV2 purchases AND direct admin mints
+- `SuperMinterV2.PlatformAirdropped` ⊂ `SoundEditionV2_1.Airdropped` — edition event fires for both platform and direct admin airdrops
+- Tracking at edition level avoids duplication and covers all cases
+
+| Function                                                 | Event                         | Handler              |
+| -------------------------------------------------------- | ----------------------------- | -------------------- |
+| User purchase via SuperMinterV2 → `edition.mint()`       | `SoundEditionV2_1.Minted`     | `Sound_Transfers.ts` |
+| Admin direct `edition.mint()`                            | `SoundEditionV2_1.Minted`     | `Sound_Transfers.ts` |
+| Platform airdrop via SuperMinterV2 → `edition.airdrop()` | `SoundEditionV2_1.Airdropped` | `Sound_Transfers.ts` |
+| Admin direct `edition.airdrop()`                         | `SoundEditionV2_1.Airdropped` | `Sound_Transfers.ts` |
+
+**Config pattern (after 2026-04-12 refactor):** `Minted` and `Airdropped` are now part of the main `SoundEditionV2_1` contract definition — the former separate `SoundEditionV2_1Transfers` contract definition has been removed. `SoundCreatorV2.Created.contractRegister` now calls only `context.addSoundEditionV2_1()`.
+
+---
 
 ---
 

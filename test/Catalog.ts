@@ -6,8 +6,7 @@ import type {
   Catalog_Collections,
   Catalog_Moments,
   Primary_Sales,
-  Collectors,
-  Payments,
+  Transfers,
 } from "generated";
 import { encodeFunctionData, maxUint256, zeroAddress } from "viem";
 import { crFactoryAbi } from "../lib/abi/crFactoryAbi";
@@ -127,43 +126,6 @@ describe("Catalog Event Handler Tests", () => {
         actualEntity.updated_at,
         event.block.timestamp,
         "updated_at should be refreshed"
-      );
-    });
-
-    it("should not update if updated_at is more recent", async () => {
-      const collection = COLLECTION.toLowerCase();
-
-      const event = CatalogRelease1155.URI.createMockEvent({
-        value: "ipfs://new-uri",
-        id: 0n,
-      });
-
-      (event as { srcAddress: string }).srcAddress = COLLECTION;
-
-      const originalUri = "ipfs://original-uri";
-      const futureTimestamp = event.block.timestamp + 9999;
-
-      const mockDb = MockDb.createMockDb().entities.Catalog_Collections.set({
-        id: `${collection}_${event.chainId}`,
-        address: collection,
-        name: "My Release",
-        creator: CREATOR.toLowerCase(),
-        uri: originalUri,
-        chain_id: event.chainId,
-        created_at: 0,
-        updated_at: futureTimestamp,
-        transaction_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-      });
-
-      const mockDbUpdated = await CatalogRelease1155.URI.processEvent({ event, mockDb });
-
-      const entityId = `${collection}_${event.chainId}`;
-      const actualEntity = await mockDbUpdated.entities.Catalog_Collections.get(entityId);
-
-      assert.equal(
-        actualEntity?.uri,
-        originalUri,
-        "uri should not change when entity is more recent"
       );
     });
   });
@@ -343,40 +305,6 @@ describe("Catalog Event Handler Tests", () => {
       );
     });
 
-    it("should not overwrite a more recent entity", async () => {
-      const collection = COLLECTION.toLowerCase();
-
-      const event = CatalogRelease1155.ContractPermissionsUpdated.createMockEvent({
-        user: ARTIST,
-        authScope: BigInt(AUTH_SCOPE_OWNER),
-      });
-      (event as { srcAddress: string }).srcAddress = COLLECTION;
-
-      const entityId = `${collection}_${event.chainId}_0_${ARTIST.toLowerCase()}`;
-      const futureTimestamp = event.block.timestamp + 9999;
-      const mockDb = MockDb.createMockDb().entities.Catalog_Admins.set({
-        id: entityId,
-        collection,
-        token_id: 0n,
-        admin: ARTIST.toLowerCase(),
-        chain_id: event.chainId,
-        auth_scope: AUTH_SCOPE_OWNER | AUTH_SCOPE_ARTIST,
-        updated_at: futureTimestamp,
-      });
-
-      const mockDbUpdated = await CatalogRelease1155.ContractPermissionsUpdated.processEvent({
-        event,
-        mockDb,
-      });
-
-      const actualEntity = await mockDbUpdated.entities.Catalog_Admins.get(entityId);
-      assert.equal(
-        actualEntity?.auth_scope,
-        AUTH_SCOPE_OWNER | AUTH_SCOPE_ARTIST,
-        "auth_scope should not change when entity is more recent"
-      );
-    });
-
     it("should skip pure MANAGER scope (cannot airdrop)", async () => {
       const mockDb = MockDb.createMockDb();
       const collection = COLLECTION.toLowerCase();
@@ -542,7 +470,7 @@ describe("Catalog Event Handler Tests", () => {
         token_id: tokenId,
         price_per_token: pricePerToken,
         funds_recipient: fundsRecipient.toLowerCase(),
-        currency: USDC_ADDRESSES[event.chainId] ?? "",
+        currency: USDC_ADDRESSES[event.chainId],
         sale_start: BigInt(0),
         sale_end: maxUint256,
         max_tokens_per_address: maxUint256,
@@ -552,45 +480,6 @@ describe("Catalog Event Handler Tests", () => {
       };
 
       assert.deepEqual(actualEntity, expectedEntity);
-    });
-
-    it("should not overwrite a more recent Catalog_Sales entity", async () => {
-      const tokenId = 1n;
-      const collection = COLLECTION.toLowerCase();
-      const originalPrice = 1_000_000n;
-
-      const event = USDCFixedPriceController.MintConfigurationUpdated.createMockEvent({
-        releaseContract: COLLECTION,
-        tokenId,
-        configuration: [5_000_000n, CREATOR],
-      });
-
-      const futureTimestamp = event.block.timestamp + 9999;
-
-      const mockDb = MockDb.createMockDb().entities.Primary_Sales.set({
-        id: `${collection}_${tokenId}_${event.chainId}`,
-        collection,
-        token_id: tokenId,
-        price_per_token: originalPrice,
-        funds_recipient: CREATOR.toLowerCase(),
-        currency: USDC_ADDRESSES[event.chainId] ?? "",
-        sale_start: BigInt(0),
-        sale_end: maxUint256,
-        max_tokens_per_address: maxUint256,
-        chain_id: event.chainId,
-        created_at: futureTimestamp,
-        transaction_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-      });
-
-      const mockDbUpdated = await USDCFixedPriceController.MintConfigurationUpdated.processEvent({
-        event,
-        mockDb,
-      });
-
-      const entityId = `${collection}_${tokenId}_${event.chainId}`;
-      const actualEntity = await mockDbUpdated.entities.Primary_Sales.get(entityId);
-
-      assert.equal(actualEntity?.price_per_token, originalPrice, "price should not change");
     });
   });
 
@@ -689,7 +578,7 @@ describe("Catalog Event Handler Tests", () => {
       });
     };
 
-    it("should create one Collectors entry per tokenId", async () => {
+    it("should create one Transfers entry per tokenId", async () => {
       const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
         albumId,
         buyer: BUYER,
@@ -704,24 +593,29 @@ describe("Catalog Event Handler Tests", () => {
       const collection = COLLECTION.toLowerCase();
       for (const tokenId of tokenIds) {
         const entityId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-        const actualEntity = mockDbUpdated.entities.Collectors.get(entityId);
+        const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
-        const expectedEntity: Collectors = {
+        const expectedEntity: Transfers = {
           id: entityId,
           collection,
           token_id: tokenId,
-          amount: BigInt(1),
           chain_id: event.chainId,
-          collector: BUYER.toLowerCase(),
+          recipient: BUYER.toLowerCase(),
+          quantity: 1n,
+          payer: undefined,
+          value: undefined,
+          currency: undefined,
+          funds_recipient: undefined,
           transaction_hash: event.transaction.hash,
-          collected_at: event.block.timestamp,
+          block_number: BigInt(event.block.number),
+          transferred_at: event.block.timestamp,
         };
 
         assert.deepEqual(actualEntity, expectedEntity);
       }
     });
 
-    it("should create one Payments entry per tokenId with amount = albumPrice / tokenIds.length", async () => {
+    it("should create one Transfers entry per tokenId regardless of album price", async () => {
       const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
         albumId,
         buyer: BUYER,
@@ -733,21 +627,13 @@ describe("Catalog Event Handler Tests", () => {
       const mockDb = seedAlbum(MockDb.createMockDb(), event.chainId);
       const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
 
-      const expectedAmountPerToken = "5.000000"; // 10 USDC / 2 tokens
-
+      const collection = COLLECTION.toLowerCase();
       for (const tokenId of tokenIds) {
-        const entityId = `${event.chainId}_${event.block.number}_${event.logIndex}_${tokenId}`;
-        const actualEntity = mockDbUpdated.entities.Payments.get(entityId);
-
-        assert.ok(actualEntity, `Payments entity should exist for tokenId ${tokenId}`);
-        assert.equal(
-          actualEntity.amount,
-          expectedAmountPerToken,
-          "amount should be albumPrice / tokenIds.length"
-        );
-        assert.equal(actualEntity.recipient, fundsRecipient.toLowerCase());
-        assert.equal(actualEntity.spender, BUYER.toLowerCase());
-        assert.equal(actualEntity.token_id, tokenId);
+        const entityId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+        const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
+        assert.ok(actualEntity, `Transfers entity should exist for tokenId ${tokenId}`);
+        assert.equal(actualEntity.recipient, BUYER.toLowerCase());
+        assert.equal(actualEntity.quantity, 1n);
       }
     });
 
@@ -765,42 +651,13 @@ describe("Catalog Event Handler Tests", () => {
 
       const collection = COLLECTION.toLowerCase();
       for (const tokenId of tokenIds) {
-        const collectorId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-        const actualCollector = mockDbUpdated.entities.Collectors.get(collectorId);
+        const transferId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+        const actualTransfer = mockDbUpdated.entities.Transfers.get(transferId);
         assert.equal(
-          actualCollector,
+          actualTransfer,
           undefined,
-          "no Collectors should be created without album record"
+          "no Transfers should be created without album record"
         );
-      }
-    });
-
-    it("should not create Payments when album price is zero", async () => {
-      const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
-        albumId,
-        buyer: BUYER,
-        referrer0: zeroAddress,
-        referrer1: zeroAddress,
-      });
-      (event as { srcAddress: string }).srcAddress = COLLECTION;
-
-      const collection = COLLECTION.toLowerCase();
-      const mockDb = MockDb.createMockDb().entities.Catalog_Albums.set({
-        id: `${collection}_${albumId}_${event.chainId}`,
-        collection,
-        album_id: albumId,
-        token_ids: JSON.stringify(tokenIds.map((id) => id.toString())),
-        funds_recipient: fundsRecipient.toLowerCase(),
-        album_price: 0n,
-        chain_id: event.chainId,
-      });
-
-      const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
-
-      for (const tokenId of tokenIds) {
-        const paymentId = `${event.chainId}_${event.block.number}_${event.logIndex}_${tokenId}`;
-        const actualPayment = mockDbUpdated.entities.Payments.get(paymentId);
-        assert.equal(actualPayment, undefined, "no Payments should be created when price is zero");
       }
     });
   });
