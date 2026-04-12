@@ -22,6 +22,21 @@ type InProcess_Moments {
   transaction_hash: String!
 }
 
+type Primary_Sales {
+  id: ID!
+  collection: String! @index
+  token_id: BigInt!
+  price_per_token: BigInt!
+  funds_recipient: String!
+  currency: String!
+  sale_start: BigInt
+  sale_end: BigInt
+  max_tokens_per_address: BigInt
+  chain_id: Int!
+  transaction_hash: String!
+  created_at: Int!
+}
+
 type InProcess_Admins {
   id: ID!
   admin: String!
@@ -32,7 +47,7 @@ type InProcess_Admins {
   updated_at: Int!
 }
 
-type InProcess_Comments {
+type InProcess_Moment_Comments {
   id: ID!
   collection: String!
   sender: String!
@@ -51,6 +66,19 @@ type InProcess_Airdrops {
   amount: BigInt!
   chain_id: Int!
   updated_at: Int!
+}
+
+type Payments {
+  id: ID!
+  collection: String!
+  currency: String!
+  token_id: BigInt!
+  recipient: String!
+  spender: String!
+  amount: String!
+  chain_id: Int!
+  transaction_hash: String!
+  transferred_at: Int!
 }
 
 type Catalog_Moments {
@@ -77,6 +105,17 @@ type Catalog_Collections {
   transaction_hash: String!
 }
 
+type Collectors {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  amount: BigInt!
+  chain_id: Int!
+  collector: String!
+  transaction_hash: String!
+  collected_at: Int!
+}
+
 type Catalog_Albums {
   id: ID! # ${releaseContract}_${albumId}_${chainId}
   collection: String!
@@ -95,6 +134,17 @@ type Catalog_Admins {
   chain_id: Int!
   auth_scope: Int!
   updated_at: Int!
+}
+
+type Secondary_Sales {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  royalty_recipient: String!
+  royalty_bps: Int!
+  chain_id: Int!
+  updated_at: Int!
+  transaction_hash: String!
 }
 
 type Sound_Editions {
@@ -132,71 +182,4 @@ type Sound_Admins {
   roles: Int!
   chain_id: Int!
   updated_at: Int!
-}
-
-type Primary_Sales {
-  id: ID!
-  collection: String! @index
-  token_id: BigInt!
-  price_per_token: BigInt!
-  funds_recipient: String!
-  currency: String!
-  sale_start: BigInt
-  sale_end: BigInt
-  max_tokens_per_address: BigInt
-  chain_id: Int!
-  transaction_hash: String!
-  created_at: Int!
-}
-
-type Transfers {
-  id: ID!
-  collection: String!
-  token_id: BigInt!
-  chain_id: Int!
-  recipient: String!
-  quantity: BigInt!
-  # InProcess only — null for Catalog/Sound.xyz
-  payer: String
-  value: BigInt
-  currency: String
-  funds_recipient: String
-  transaction_hash: String!
-  block_number: BigInt!
-  transferred_at: Int!
-}
-
-type Collectors {
-  id: ID!
-  collection: String!
-  token_id: BigInt!
-  amount: BigInt!
-  chain_id: Int!
-  collector: String!
-  transaction_hash: String!
-  collected_at: Int!
-}
-
-type Payments {
-  id: ID!
-  collection: String!
-  currency: String!
-  token_id: BigInt!
-  recipient: String!
-  spender: String!
-  amount: String!
-  chain_id: Int!
-  transaction_hash: String!
-  transferred_at: Int!
-}
-
-type Secondary_Sales {
-  id: ID!
-  collection: String!
-  token_id: BigInt!
-  royalty_recipient: String!
-  royalty_bps: Int!
-  chain_id: Int!
-  updated_at: Int!
-  transaction_hash: String!
 }

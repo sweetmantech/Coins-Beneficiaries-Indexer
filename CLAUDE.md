@@ -473,15 +473,12 @@ After initialization, updates via `SoundEditionV2_1.setContractURI(string)` emit
 #### Handler Files
 
 - `src/handlers/Sound_Editions.ts`
-  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS); also registers `SoundEditionV2_1Transfers` contract
+  - `SoundCreatorV2.Created` — create Sound_Editions (decodes initData for name, contractURI, baseURI, fundingRecipient, royaltyBPS)
   - `SoundEditionV2_1.ContractURISet` — update Sound_Editions.uri
   - `SoundEditionV2_1.BaseURISet` — update Sound_Editions.base_uri + update non-metadata Sound_Moments URIs
 - `src/handlers/Sound_Moments.ts`
   - `SoundMetadata.BaseURISet` — upsert Sound_Moments per tier (uri_from_metadata=true)
   - `SoundEditionV2_1.TierCreated` — create Sound_Moments for post-deploy tiers (uri_from_metadata=false, uri from edition base_uri)
-- `src/handlers/Sound_Transfers.ts`
-  - `SoundEditionV2_1Transfers.Minted` — all mints (user purchases via SuperMinterV2 + direct admin mints)
-  - `SoundEditionV2_1Transfers.Airdropped` — all airdrops (platform via SuperMinterV2 + direct admin)
 
 #### Envio getWhere Limitation
 
@@ -499,7 +496,6 @@ for (const moment of moments) {
 
 - Network `start_block: 7272930` (SoundCreatorV2 deployment block on Base)
 - SoundCreatorV2, SoundEditionV2_1, SoundMetadata inherit network start_block (no override needed)
-- `SoundEditionV2_1Transfers` (Minted + Airdropped) — `start_block: 44239100` (historical data cutoff)
 - Catalog contracts set `start_block: 18357751`, InProcess contracts set `start_block: 27712746`
 
 ---
@@ -519,69 +515,6 @@ for (const moment of moments) {
 | "Super admin"       | `PERMISSION_BIT_ADMIN = 2`                  | `AUTH_SCOPE_OWNER = 1`     | Contract `owner` (Ownable)           |
 | Sub-roles           | 5 (ADMIN/MINTER/SALES/META/FUNDS)           | 3 (OWNER/ARTIST/MANAGER)   | 2 (ADMIN_ROLE=1, MINTER_ROLE=2)      |
 | Token grouping      | By tokenId                                  | By tokenId                 | By tier (uint8); IDs are sequential  |
-
----
-
-## Transfers
-
-All token transfer history is unified into a single `Transfers` table. Catalog and Sound.xyz are **discontinued services** — payment history is not tracked for them; only transfer history matters.
-
-### Schema
-
-```graphql
-type Transfers {
-  id: ID! # ${collection}_${token_id}_${chain_id}_${block_number}_${log_index}
-  collection: String!
-  token_id: BigInt!
-  chain_id: Int!
-  recipient: String! # token receiver
-  quantity: BigInt! # token quantity
-  # InProcess only — undefined for Catalog/Sound.xyz
-  payer: String
-  value: BigInt
-  currency: String
-  funds_recipient: String
-  transaction_hash: String!
-  block_number: BigInt!
-  transferred_at: Int!
-}
-```
-
-### Transfer Type Inference (InProcess only)
-
-| `payer`  | `value` | Type                 |
-| -------- | ------- | -------------------- |
-| non-null | > 0     | Paid mint            |
-| non-null | 0       | Free mint            |
-| null     | 0       | Airdrop / admin mint |
-
-### Catalog — All Mint Types Covered
-
-| Function                                 | Event                                                                | Handler                |
-| ---------------------------------------- | -------------------------------------------------------------------- | ---------------------- |
-| `purchaseTokenWithValue()`               | `TokenPurchased`                                                     | `Catalog_Transfers.ts` |
-| `lzPurchaseTokenWithValue()` (lazy mint) | `TokenPurchased` (same — calls `_purchaseTokenWithValue` internally) | `Catalog_Transfers.ts` |
-| `purchaseAlbumWithValue()`               | `AlbumPurchased`                                                     | `Catalog_Transfers.ts` |
-| `mintTokenAdmin()` (airdrop)             | `TokenMinted`                                                        | `Catalog_Transfers.ts` |
-
-### Sound.xyz — All Mint Types Covered
-
-Sound.xyz tracking uses `SoundEditionV2_1Transfers` (a separate contract definition for `SoundEditionV2_1` with `start_block: 44239100`), so Envio only processes events from that block onwards.
-
-**Why edition-level events instead of SuperMinterV2:**
-
-- `SuperMinterV2.Minted` ⊂ `SoundEditionV2_1.Minted` — edition event fires for both SuperMinterV2 purchases AND direct admin mints
-- `SuperMinterV2.PlatformAirdropped` ⊂ `SoundEditionV2_1.Airdropped` — edition event fires for both platform and direct admin airdrops
-- Tracking at edition level avoids duplication and covers all cases
-
-| Function                                                 | Event                         | Handler              |
-| -------------------------------------------------------- | ----------------------------- | -------------------- |
-| User purchase via SuperMinterV2 → `edition.mint()`       | `SoundEditionV2_1.Minted`     | `Sound_Transfers.ts` |
-| Admin direct `edition.mint()`                            | `SoundEditionV2_1.Minted`     | `Sound_Transfers.ts` |
-| Platform airdrop via SuperMinterV2 → `edition.airdrop()` | `SoundEditionV2_1.Airdropped` | `Sound_Transfers.ts` |
-| Admin direct `edition.airdrop()`                         | `SoundEditionV2_1.Airdropped` | `Sound_Transfers.ts` |
-
-**Config pattern:** `SoundEditionV2_1` (existing events) and `SoundEditionV2_1Transfers` (Minted + Airdropped only) are two separate contract definitions pointing to the same dynamic contracts — same pattern as the former `SuperMinterV2Sales`/`SuperMinterV2Collectors` split. Both are registered together in `SoundCreatorV2.Created.contractRegister`.
 
 ---
 

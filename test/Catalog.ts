@@ -6,7 +6,8 @@ import type {
   Catalog_Collections,
   Catalog_Moments,
   Primary_Sales,
-  Transfers,
+  Collectors,
+  Payments,
 } from "generated";
 import { encodeFunctionData, maxUint256, zeroAddress } from "viem";
 import { crFactoryAbi } from "../lib/abi/crFactoryAbi";
@@ -688,7 +689,7 @@ describe("Catalog Event Handler Tests", () => {
       });
     };
 
-    it("should create one Transfers entry per tokenId", async () => {
+    it("should create one Collectors entry per tokenId", async () => {
       const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
         albumId,
         buyer: BUYER,
@@ -703,29 +704,24 @@ describe("Catalog Event Handler Tests", () => {
       const collection = COLLECTION.toLowerCase();
       for (const tokenId of tokenIds) {
         const entityId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-        const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
+        const actualEntity = mockDbUpdated.entities.Collectors.get(entityId);
 
-        const expectedEntity: Transfers = {
+        const expectedEntity: Collectors = {
           id: entityId,
           collection,
           token_id: tokenId,
+          amount: BigInt(1),
           chain_id: event.chainId,
-          recipient: BUYER.toLowerCase(),
-          quantity: 1n,
-          payer: undefined,
-          value: undefined,
-          currency: undefined,
-          funds_recipient: undefined,
+          collector: BUYER.toLowerCase(),
           transaction_hash: event.transaction.hash,
-          block_number: BigInt(event.block.number),
-          transferred_at: event.block.timestamp,
+          collected_at: event.block.timestamp,
         };
 
         assert.deepEqual(actualEntity, expectedEntity);
       }
     });
 
-    it("should create one Transfers entry per tokenId regardless of album price", async () => {
+    it("should create one Payments entry per tokenId with amount = albumPrice / tokenIds.length", async () => {
       const event = CatalogRelease1155.AlbumPurchased.createMockEvent({
         albumId,
         buyer: BUYER,
@@ -737,13 +733,21 @@ describe("Catalog Event Handler Tests", () => {
       const mockDb = seedAlbum(MockDb.createMockDb(), event.chainId);
       const mockDbUpdated = await CatalogRelease1155.AlbumPurchased.processEvent({ event, mockDb });
 
-      const collection = COLLECTION.toLowerCase();
+      const expectedAmountPerToken = "5.000000"; // 10 USDC / 2 tokens
+
       for (const tokenId of tokenIds) {
-        const entityId = `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-        const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
-        assert.ok(actualEntity, `Transfers entity should exist for tokenId ${tokenId}`);
-        assert.equal(actualEntity.recipient, BUYER.toLowerCase());
-        assert.equal(actualEntity.quantity, 1n);
+        const entityId = `${event.chainId}_${event.block.number}_${event.logIndex}_${tokenId}`;
+        const actualEntity = mockDbUpdated.entities.Payments.get(entityId);
+
+        assert.ok(actualEntity, `Payments entity should exist for tokenId ${tokenId}`);
+        assert.equal(
+          actualEntity.amount,
+          expectedAmountPerToken,
+          "amount should be albumPrice / tokenIds.length"
+        );
+        assert.equal(actualEntity.recipient, fundsRecipient.toLowerCase());
+        assert.equal(actualEntity.spender, BUYER.toLowerCase());
+        assert.equal(actualEntity.token_id, tokenId);
       }
     });
 
