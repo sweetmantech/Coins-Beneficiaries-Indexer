@@ -6,7 +6,6 @@ import {
   type InProcessMoment_URI_handlerArgs,
   type InProcessMoment_UpdatedRoyalties_handlerArgs,
 } from "generated";
-import getValidateExistingEntity from "@/lib/in_process_moments/getValidateExistingEntity";
 
 InProcessMoment.SetupNewToken.handler(
   async ({ event, context }: InProcessMoment_SetupNewToken_handlerArgs) => {
@@ -63,12 +62,12 @@ InProcessMoment.UpdatedRoyalties.handler(
 );
 
 InProcessMoment.URI.handler(async ({ event, context }: InProcessMoment_URI_handlerArgs) => {
-  const existingEntity = await getValidateExistingEntity(event, context);
-
-  if (!existingEntity) return;
+  const existingEntity = await context.InProcess_Moments.get(
+    `${event.srcAddress.toLowerCase()}_${Number(event.params.id)}_${event.chainId}`
+  );
 
   const entity: InProcess_Moments = {
-    ...existingEntity,
+    ...existingEntity!,
     updated_at: event.block.timestamp,
     uri: event.params.value,
   };

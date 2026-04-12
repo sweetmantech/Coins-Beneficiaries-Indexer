@@ -1,5 +1,4 @@
 import { decodeInitData } from "../../lib/sound_editions/decodeInitData";
-import { getLatestAdmin } from "@/lib/sound_admins/getLatestAdmin";
 import { SOUND_ADMIN_ROLE } from "@/lib/consts";
 import {
   SoundCreatorV2,
@@ -22,7 +21,6 @@ SoundCreatorV2.Created.contractRegister(
     context: contractRegistrations;
   }) => {
     context.addSoundEditionV2_1(event.params.edition);
-    context.addSoundEditionV2_1Transfers(event.params.edition);
   }
 );
 
@@ -71,8 +69,7 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
     chain_id: event.chainId,
     updated_at: event.block.timestamp,
   };
-  const latestAdmin = await getLatestAdmin(adminEntity, context);
-  context.Sound_Admins.set(latestAdmin);
+  context.Sound_Admins.set(adminEntity);
 });
 
 SoundEditionV2_1.ContractURISet.handler(
@@ -80,10 +77,9 @@ SoundEditionV2_1.ContractURISet.handler(
     const address = event.srcAddress.toLowerCase();
     const id = `${address}_${event.chainId}`;
     const existing = await context.Sound_Editions.get(id);
-    if (!existing) return;
 
     context.Sound_Editions.set({
-      ...existing,
+      ...existing!,
       uri: event.params.contractURI,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
@@ -96,12 +92,11 @@ SoundEditionV2_1.BaseURISet.handler(
     const address = event.srcAddress.toLowerCase();
     const id = `${address}_${event.chainId}`;
     const existing = await context.Sound_Editions.get(id);
-    if (!existing) return;
 
     const newBaseURI = event.params.baseURI;
 
     context.Sound_Editions.set({
-      ...existing,
+      ...existing!,
       base_uri: newBaseURI,
       updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
