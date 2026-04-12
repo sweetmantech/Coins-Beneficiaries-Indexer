@@ -9,6 +9,7 @@ import {
   type SoundEditionV2_1_FundingRecipientSet_handlerArgs,
   type SoundEditionV2_1_RoyaltySet_handlerArgs,
 } from "generated";
+
 SuperMinterV2.MintCreated.handler(
   async ({ event, context }: SuperMinterV2_MintCreated_handlerArgs) => {
     if (Number(event.params.creation[10]) !== 0) return; // only DEFAULT (public) mints
@@ -85,12 +86,7 @@ SoundEditionV2_1.FundingRecipientSet.handler(
     const chainId = event.chainId;
 
     const edition = await context.Sound_Editions.get(`${address}_${chainId}`);
-    if (!edition) {
-      console.warn(
-        `[FundingRecipientSet] Sound_Editions not found: ${address}_${chainId} tx=${event.transaction.hash}`
-      );
-      return;
-    }
+    if (!edition) return;
     context.Sound_Editions.set({
       ...edition,
       funding_recipient: recipient,
@@ -127,12 +123,7 @@ SoundEditionV2_1.RoyaltySet.handler(
     const chainId = event.chainId;
 
     const edition = await context.Sound_Editions.get(`${address}_${chainId}`);
-    if (!edition) {
-      console.warn(
-        `[RoyaltySet] Sound_Editions not found: ${address}_${chainId} tx=${event.transaction.hash}`
-      );
-      return;
-    }
+    if (!edition) return;
     context.Sound_Editions.set({
       ...edition,
       royalty_bps: bps,
