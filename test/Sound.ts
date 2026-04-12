@@ -9,14 +9,7 @@ import type {
   Transfers,
 } from "generated";
 
-const {
-  MockDb,
-  SoundCreatorV2,
-  SoundMetadata,
-  SuperMinterV2,
-  SoundEditionV2_1,
-  SoundEditionV2_1Transfers,
-} = TestHelpers;
+const { MockDb, SoundCreatorV2, SoundMetadata, SuperMinterV2, SoundEditionV2_1 } = TestHelpers;
 
 const EDITION = "0x38125f59663ad6b9f84efdb790dcde61692adec4";
 const OWNER = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -490,11 +483,11 @@ describe("SuperMinterV2 Handler Tests", () => {
 
 const COLLECTOR = "0xcccccccccccccccccccccccccccccccccccccccc";
 
-describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
+describe("SoundEditionV2_1.Minted Handler Tests", () => {
   it("should create Transfers entity", async () => {
     const mockDb = MockDb.createMockDb();
 
-    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
+    const event = SoundEditionV2_1.Minted.createMockEvent({
       tier: 0n,
       to: COLLECTOR as `0x${string}`,
       quantity: 2n,
@@ -502,7 +495,7 @@ describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
     });
     (event as { srcAddress: string }).srcAddress = EDITION;
 
-    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
+    const db = await SoundEditionV2_1.Minted.processEvent({ event, mockDb });
 
     const id = `${EDITION}_0_${event.chainId}_${event.block.number}_${event.logIndex}`;
     const actual = await db.entities.Transfers.get(id);
@@ -529,7 +522,7 @@ describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
   it("should set token_id to tier plus one", async () => {
     const mockDb = MockDb.createMockDb();
 
-    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
+    const event = SoundEditionV2_1.Minted.createMockEvent({
       tier: 1n,
       to: COLLECTOR as `0x${string}`,
       quantity: 1n,
@@ -537,7 +530,7 @@ describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
     });
     (event as { srcAddress: string }).srcAddress = EDITION;
 
-    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
+    const db = await SoundEditionV2_1.Minted.processEvent({ event, mockDb });
 
     const id = `${EDITION}_1_${event.chainId}_${event.block.number}_${event.logIndex}`;
     const actual = await db.entities.Transfers.get(id);
@@ -547,7 +540,7 @@ describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
   it("should set collection to srcAddress", async () => {
     const mockDb = MockDb.createMockDb();
 
-    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
+    const event = SoundEditionV2_1.Minted.createMockEvent({
       tier: 0n,
       to: COLLECTOR as `0x${string}`,
       quantity: 1n,
@@ -555,7 +548,7 @@ describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
     });
     (event as { srcAddress: string }).srcAddress = EDITION;
 
-    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
+    const db = await SoundEditionV2_1.Minted.processEvent({ event, mockDb });
 
     const id = `${EDITION}_0_${event.chainId}_${event.block.number}_${event.logIndex}`;
     const actual = await db.entities.Transfers.get(id);
