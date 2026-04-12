@@ -602,7 +602,8 @@ for (const moment of moments) {
 
 - Network `start_block: 7272930` (SoundCreatorV2 deployment block on Base)
 - SoundCreatorV2, SoundMetadata inherit network start_block (no override needed)
-- `SoundEditionV2_1` — `start_block: 44239100` (historical data cutoff; Minted + Airdropped events only processed from this block)
+- `SoundEditionV2_1` — `start_block: 44239100` (historical data cutoff; **Minted** + **Airdropped** only — this is where high-volume **transfer** indexing is gated; replaces tracking **`SuperMinterV2.Minted`**, which was removed as redundant with the edition event)
+- `SuperMinterV2` — inherits network `start_block` (no `44239100` override in `config.yaml`). Handlers are **`MintCreated`**, **`PriceSet`**, **`TimeRangeSet`**, **`MaxMintablePerAccountSet`** only (**`Minted`** not indexed here). The historical **transfer** cutoff applies to **`SoundEditionV2_1`** (`Minted` / `Airdropped`); it is not the same concern as replaying these lighter **Primary_Sales** schedule events from SuperMinter. Add `start_block: 44239100` on this contract entry only if you want to skip replaying pre-cutoff **Primary_Sales** rows as well (stricter alignment with any Supabase snapshot of those events).
 - Catalog contracts set `start_block: 18357751`, InProcess contracts set `start_block: 27712746`
 
 ---
