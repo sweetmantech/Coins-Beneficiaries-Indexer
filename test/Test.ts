@@ -2,35 +2,41 @@ import assert from "assert";
 import { TestHelpers } from "generated";
 import type {
   InProcess_Collections,
-  Collectors,
-  InProcess_Moment_Comments,
+  InProcess_Comments,
   InProcess_Moments,
   InProcess_Admins,
-  Payments,
+  Transfers,
+  Primary_Sales,
 } from "generated";
+import { zeroAddress } from "viem";
 
 const {
   MockDb,
   InProcessCreatorFactory,
+  InProcessCreatorFixedPriceSaleStrategy,
   InProcessERC20Minter,
   InProcessMoment,
   CatalogRelease1155,
 } = TestHelpers;
 
+const COLLECTION = "0x1234567890123456789012345678901234567890";
+const ADMIN = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+const FUNDS_RECIPIENT = "0x5555555555555555555555555555555555555555";
+const BUYER = "0xcfbf34d385ea2d5eb947063b67ea226dcda3dc38";
+
 describe("Event Handler Tests", () => {
+  // ─── InProcess Collections ───────────────────────────────────────────────
+
   describe("InProcessCreatorFactory.SetupNewContract", () => {
     it("should create InProcess_Collections entity correctly", async () => {
       const mockDb = MockDb.createMockDb();
 
-      const defaultAdmin = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
-      const payoutRecipient = "0x5555555555555555555555555555555555555555";
-      const newContract = "0x1234567890123456789012345678901234567890";
       const event = InProcessCreatorFactory.SetupNewContract.createMockEvent({
-        newContract: newContract,
+        newContract: COLLECTION,
         name: "Test Collection",
-        defaultAdmin: defaultAdmin,
+        defaultAdmin: ADMIN,
         contractURI: "https://example.com/contract",
-        defaultRoyaltyConfiguration: [0n, 0n, payoutRecipient],
+        defaultRoyaltyConfiguration: [0n, 0n, FUNDS_RECIPIENT],
       });
 
       const mockDbUpdated = await InProcessCreatorFactory.SetupNewContract.processEvent({
@@ -38,38 +44,37 @@ describe("Event Handler Tests", () => {
         mockDb,
       });
 
-      const collection = newContract.toLowerCase();
+      const collection = COLLECTION.toLowerCase();
       const entityId = `${collection}_${event.chainId}`;
-      const actualEntity = await mockDbUpdated.entities.InProcess_Collections.get(entityId);
+      const actualEntity = mockDbUpdated.entities.InProcess_Collections.get(entityId);
 
       const expectedEntity: InProcess_Collections = {
         id: entityId,
         address: collection,
         name: event.params.name,
         uri: event.params.contractURI,
-        default_admin: defaultAdmin.toLowerCase(),
+        default_admin: ADMIN.toLowerCase(),
         chain_id: event.chainId,
         created_at: event.block.timestamp,
         updated_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
       };
 
-      assert.deepEqual(
-        actualEntity,
-        expectedEntity,
-        "InProcess_Collections entity should match expected values"
-      );
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
 
+  // ─── Comments ────────────────────────────────────────────────────────────
+
   describe("InProcessERC20Minter.MintComment", () => {
-    it("should create InProcess_Moment_Comments entity correctly", async () => {
+    it("should create InProcess_Comments entity", async () => {
       const mockDb = MockDb.createMockDb();
 
       const event = InProcessERC20Minter.MintComment.createMockEvent({
-        sender: "0x1111111111111111111111111111111111111111",
-        tokenContract: "0x2222222222222222222222222222222222222222",
+        sender: BUYER,
+        tokenContract: COLLECTION,
         tokenId: 1n,
+        quantity: 1n,
         comment: "Test comment",
       });
 
@@ -78,277 +83,335 @@ describe("Event Handler Tests", () => {
         mockDb,
       });
 
-      const entityId = `${event.params.tokenContract.toLowerCase()}_${event.params.tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const actualEntity = await mockDbUpdated.entities.InProcess_Moment_Comments.get(entityId);
+      const entityId = `${COLLECTION.toLowerCase()}_1_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const actualEntity = mockDbUpdated.entities.InProcess_Comments.get(entityId);
 
-      const expectedEntity: InProcess_Moment_Comments = {
+      const expectedEntity: InProcess_Comments = {
         id: entityId,
-        sender: event.params.sender.toLowerCase(),
-        collection: event.params.tokenContract.toLowerCase(),
-        token_id: event.params.tokenId,
-        comment: event.params.comment,
+        sender: BUYER.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
+        token_id: 1n,
+        comment: "Test comment",
         commented_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
         chain_id: event.chainId,
       };
 
-      assert.deepEqual(
-        actualEntity,
-        expectedEntity,
-        "InProcess_Moment_Comments entity should match expected values"
-      );
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
 
-  describe("InProcessERC20Minter.ERC20RewardsDeposit", () => {
-    it("should create InProcess_ERC20RewardsDeposit entity correctly", async function () {
-      this.timeout(10000); // Increase timeout since getUsdcTransfer makes async RPC calls
+  describe("InProcessCreatorFixedPriceSaleStrategy.MintComment", () => {
+    it("should create InProcess_Comments entity", async () => {
       const mockDb = MockDb.createMockDb();
 
-      const event = InProcessERC20Minter.ERC20RewardsDeposit.createMockEvent({
-        collection: "0x3333333333333333333333333333333333333333",
-        currency: "0x4444444444444444444444444444444444444444",
-        tokenId: 2n,
+      const event = InProcessCreatorFixedPriceSaleStrategy.MintComment.createMockEvent({
+        sender: BUYER,
+        tokenContract: COLLECTION,
+        tokenId: 1n,
+        quantity: 1n,
+        comment: "ETH mint comment",
       });
 
-      // Set a valid transaction hash (must start with 0x and be 66 chars)
-      // Use type assertion to bypass read-only property
-      (event.transaction as { hash: string }).hash =
-        "0x1234567890123456789012345678901234567890123456789012345678901234";
-
-      const mockDbUpdated = await InProcessERC20Minter.ERC20RewardsDeposit.processEvent({
+      const mockDbUpdated = await InProcessCreatorFixedPriceSaleStrategy.MintComment.processEvent({
         event,
         mockDb,
       });
 
-      const entityId = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const actualEntity = await mockDbUpdated.entities.Payments.get(entityId);
+      const entityId = `${COLLECTION.toLowerCase()}_1_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const actualEntity = mockDbUpdated.entities.InProcess_Comments.get(entityId);
 
-      // Note: getUsdcTransfer is async and may fail in tests, so we check for basic structure
-      assert.ok(actualEntity, "Payments entity should exist");
-      assert.equal(actualEntity.id, entityId, "Entity ID should match expected format");
-      assert.equal(
-        actualEntity.collection,
-        event.params.collection,
-        "Collection should match event params"
-      );
-      assert.equal(
-        actualEntity.currency,
-        event.params.currency,
-        "Currency should match event params"
-      );
-      assert.equal(
-        actualEntity.token_id,
-        event.params.tokenId,
-        "TokenId should match event params"
-      );
-      assert.equal(
-        actualEntity.transaction_hash,
-        event.transaction.hash,
-        "TransactionHash should match event"
-      );
-      assert.equal(
-        actualEntity.transferred_at,
-        event.block.timestamp,
-        "TransferredAt should match event timestamp"
-      );
-      assert.equal(actualEntity.chain_id, event.chainId, "ChainId should match event");
-      // recipient, spender, and amount are derived from getUsdcTransfer
-      // When getUsdcTransfer fails, it returns zeroAddress and "0.000000"
-      assert.ok(typeof actualEntity.recipient === "string", "Recipient should be a string");
-      assert.ok(typeof actualEntity.spender === "string", "Spender should be a string");
-      assert.ok(typeof actualEntity.amount === "string", "Amount should be a string");
+      const expectedEntity: InProcess_Comments = {
+        id: entityId,
+        sender: BUYER.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
+        token_id: 1n,
+        comment: "ETH mint comment",
+        commented_at: event.block.timestamp,
+        transaction_hash: event.transaction.hash,
+        chain_id: event.chainId,
+      };
+
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
+
+  // ─── Transfers ───────────────────────────────────────────────────────────
+
+  describe("InProcessMoment.TransferSingle (airdrop/mint)", () => {
+    it("should create Transfers entity with undefined payer for admin mints", async () => {
+      const tokenId = 1n;
+      const quantity = 3n;
+      const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
+
+      const event = InProcessMoment.TransferSingle.createMockEvent({
+        operator: ADMIN,
+        from: zeroAddress,
+        to: BUYER,
+        id: tokenId,
+        value: quantity,
+      });
+
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+      (event.transaction as { hash: string }).hash = txHash;
+
+      const mockDb = MockDb.createMockDb();
+      const mockDbUpdated = await InProcessMoment.TransferSingle.processEvent({ event, mockDb });
+
+      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${txHash}`;
+      const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
+
+      const expectedEntity: Transfers = {
+        id: entityId,
+        collection: COLLECTION.toLowerCase(),
+        token_id: tokenId,
+        chain_id: event.chainId,
+        recipient: BUYER.toLowerCase(),
+        quantity,
+        payer: undefined,
+        value: undefined,
+        currency: undefined,
+        funds_recipient: undefined,
+        transaction_hash: txHash,
+        block_number: BigInt(event.block.number),
+        transferred_at: event.block.timestamp,
+      };
+
+      assert.deepEqual(actualEntity, expectedEntity);
+    });
+  });
+
+  describe("InProcessMoment.Purchased (ETH mint)", () => {
+    it("should update Transfers with payer/value/funds_recipient from Primary_Sales", async () => {
+      const tokenId = 1n;
+      const value = 1000000000000000n; // 0.001 ETH
+      const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
+      const collection = COLLECTION.toLowerCase();
+
+      const transferEvent = InProcessMoment.TransferSingle.createMockEvent({
+        operator: BUYER,
+        from: zeroAddress,
+        to: BUYER,
+        id: tokenId,
+        value: 1n,
+      });
+      (transferEvent as { srcAddress: string }).srcAddress = COLLECTION;
+      (transferEvent.transaction as { hash: string }).hash = txHash;
+
+      const purchasedEvent = InProcessMoment.Purchased.createMockEvent({
+        sender: BUYER,
+        minter: "0x2994762aa0e4c750c51f333c10d81961faebe785",
+        tokenId,
+        quantity: 1n,
+        value,
+      });
+      (purchasedEvent as { srcAddress: string }).srcAddress = COLLECTION;
+      (purchasedEvent.transaction as { hash: string }).hash = txHash;
+
+      const saleId = `${collection}_${tokenId}_${transferEvent.chainId}`;
+      const sale: Primary_Sales = {
+        id: saleId,
+        collection,
+        token_id: tokenId,
+        price_per_token: value,
+        funds_recipient: FUNDS_RECIPIENT.toLowerCase(),
+        currency: zeroAddress,
+        sale_start: undefined,
+        sale_end: undefined,
+        max_tokens_per_address: undefined,
+        chain_id: transferEvent.chainId,
+        transaction_hash: txHash,
+        created_at: 0,
+      };
+
+      let mockDb = MockDb.createMockDb().entities.Primary_Sales.set(sale);
+      mockDb = await InProcessMoment.TransferSingle.processEvent({ event: transferEvent, mockDb });
+      const mockDbUpdated = await InProcessMoment.Purchased.processEvent({
+        event: purchasedEvent,
+        mockDb,
+      });
+
+      const entityId = `${collection}_${tokenId}_${transferEvent.chainId}_${txHash}`;
+      const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
+
+      assert.ok(actualEntity, "Transfers entity should exist");
+      assert.equal(actualEntity.payer, BUYER.toLowerCase());
+      assert.equal(actualEntity.value, value);
+      assert.equal(actualEntity.currency, zeroAddress);
+      assert.equal(actualEntity.funds_recipient, FUNDS_RECIPIENT.toLowerCase());
+    });
+  });
+
+  // ─── Moments ─────────────────────────────────────────────────────────────
 
   describe("InProcessMoment.SetupNewToken", () => {
     it("should create InProcess_Moments entity correctly", async () => {
       const mockDb = MockDb.createMockDb();
-
-      const collection = "0x1234567890123456789012345678901234567890";
       const tokenId = 1n;
+
       const event = InProcessMoment.SetupNewToken.createMockEvent({
         tokenId,
         newURI: "https://example.com/token/1",
         maxSupply: 100n,
       });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
 
-      // Set srcAddress to the collection address
-      (event as { srcAddress: string }).srcAddress = collection;
+      const mockDbUpdated = await InProcessMoment.SetupNewToken.processEvent({ event, mockDb });
 
-      const mockDbUpdated = await InProcessMoment.SetupNewToken.processEvent({
-        event,
-        mockDb,
-      });
-
-      const entityId = `${collection.toLowerCase()}_${tokenId}_${event.chainId}`;
-      const actualEntity = await mockDbUpdated.entities.InProcess_Moments.get(entityId);
+      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.InProcess_Moments.get(entityId);
 
       const expectedEntity: InProcess_Moments = {
         id: entityId,
-        collection: collection.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
         token_id: tokenId,
-        max_supply: event.params.maxSupply,
-        uri: event.params.newURI,
+        max_supply: 100n,
+        uri: "https://example.com/token/1",
         chain_id: event.chainId,
         created_at: event.block.timestamp,
         updated_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
       };
 
-      assert.deepEqual(
-        actualEntity,
-        expectedEntity,
-        "InProcess_Moments entity should match expected values"
-      );
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
+
+  // ─── Admins ───────────────────────────────────────────────────────────────
 
   describe("InProcessMoment.UpdatedPermissions", () => {
     it("should create InProcess_Admins entity correctly", async () => {
       const mockDb = MockDb.createMockDb();
-
-      const collection = "0x1234567890123456789012345678901234567890";
       const tokenId = 1n;
-      const admin = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+
       const event = InProcessMoment.UpdatedPermissions.createMockEvent({
         tokenId,
-        user: admin,
-        permissions: 2n, // Required for the event filter
+        user: ADMIN,
+        permissions: 2n,
       });
-
-      // Set srcAddress to the collection address
-      (event as { srcAddress: string }).srcAddress = collection;
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
 
       const mockDbUpdated = await InProcessMoment.UpdatedPermissions.processEvent({
         event,
         mockDb,
       });
 
-      const entityId = `${event.srcAddress.toLowerCase()}_${event.chainId}_${event.params.tokenId.toString()}_${event.params.user.toLowerCase()}`;
-      const actualEntity = await mockDbUpdated.entities.InProcess_Admins.get(entityId);
+      const entityId = `${COLLECTION.toLowerCase()}_${event.chainId}_${tokenId}_${ADMIN.toLowerCase()}`;
+      const actualEntity = mockDbUpdated.entities.InProcess_Admins.get(entityId);
 
       const expectedEntity: InProcess_Admins = {
         id: entityId,
-        collection: collection.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
         token_id: tokenId,
-        admin: admin.toLowerCase(),
+        admin: ADMIN.toLowerCase(),
         chain_id: event.chainId,
-        permission: Number(event.params.permissions),
+        permission: 2,
         updated_at: event.block.timestamp,
       };
 
-      assert.deepEqual(
-        actualEntity,
-        expectedEntity,
-        "InProcess_Admins entity should match expected values"
-      );
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
 
-  describe("CatalogRelease1155.TokenPurchased (Collects)", () => {
-    it("should create Collectors entity correctly", async () => {
-      const mockDb = MockDb.createMockDb();
+  // ─── Catalog ─────────────────────────────────────────────────────────────
 
-      const collection = "0x1234567890123456789012345678901234567890";
-      const buyer = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+  describe("CatalogRelease1155.TokenPurchased", () => {
+    it("should create Transfers entity correctly", async () => {
+      const mockDb = MockDb.createMockDb();
       const tokenId = 2n;
       const amount = 5n;
 
       const event = CatalogRelease1155.TokenPurchased.createMockEvent({
         tokenId,
         amount,
-        buyer,
-        referrer0: "0x0000000000000000000000000000000000000000",
-        referrer1: "0x0000000000000000000000000000000000000000",
+        buyer: BUYER,
+        referrer0: zeroAddress,
+        referrer1: zeroAddress,
       });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
 
-      (event as { srcAddress: string }).srcAddress = collection;
+      const mockDbUpdated = await CatalogRelease1155.TokenPurchased.processEvent({ event, mockDb });
 
-      const mockDbUpdated = await CatalogRelease1155.TokenPurchased.processEvent({
-        event,
-        mockDb,
-      });
+      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
-      const entityId = `${collection.toLowerCase()}_${tokenId.toString()}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const actualEntity = mockDbUpdated.entities.Collectors.get(entityId);
-
-      const expectedEntity: Collectors = {
+      const expectedEntity: Transfers = {
         id: entityId,
-        collection: collection.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
         token_id: tokenId,
-        amount,
         chain_id: event.chainId,
-        collector: buyer.toLowerCase(),
+        recipient: BUYER.toLowerCase(),
+        quantity: amount,
+        payer: undefined,
+        value: undefined,
+        currency: undefined,
+        funds_recipient: undefined,
         transaction_hash: event.transaction.hash,
-        collected_at: event.block.timestamp,
+        block_number: BigInt(event.block.number),
+        transferred_at: event.block.timestamp,
       };
 
-      assert.deepEqual(
-        actualEntity,
-        expectedEntity,
-        "Collectors entity should match expected values"
-      );
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
 
-  describe("InProcessMoment.TransferSingle (Collects)", () => {
-    it("should create Collectors entity correctly", async function () {
-      this.timeout(10000);
-      const collection = "0x9f19bf91451238b706e596e0237a64811fae8e4b";
-      const defaultAdmin = "0xaf1452d289e22fbd0dea9d5097353c72a90fac33";
-      const collector = "0xcfbf34d385ea2d5eb947063b67ea226dcda3dc38";
-      const tokenId = 1n;
-      const amount = 3n;
+  describe("InProcessERC20Minter.ERC20RewardsDeposit (ERC20 mint)", () => {
+    it("should update Transfers with payer/value/currency/funds_recipient from Primary_Sales", async () => {
+      const tokenId = 2n;
+      const currency = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"; // USDC
+      const pricePerToken = 5000000n; // 5 USDC
+      const quantity = 2n;
+      const collection = COLLECTION.toLowerCase();
+      const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
 
-      const event = InProcessMoment.TransferSingle.createMockEvent({
-        operator: collector,
-        from: "0x0000000000000000000000000000000000000000",
-        to: collector,
+      const transferEvent = InProcessMoment.TransferSingle.createMockEvent({
+        operator: BUYER,
+        from: zeroAddress,
+        to: BUYER,
         id: tokenId,
-        value: amount,
+        value: quantity,
       });
+      (transferEvent as { srcAddress: string }).srcAddress = COLLECTION;
+      (transferEvent.transaction as { hash: string }).hash = txHash;
 
-      (event as { srcAddress: string }).srcAddress = collection;
+      const depositEvent = InProcessERC20Minter.ERC20RewardsDeposit.createMockEvent({
+        collection: COLLECTION,
+        currency,
+        tokenId,
+      });
+      (depositEvent.transaction as { hash: string }).hash = txHash;
 
-      // Seed a collection entity so getCollectionEntity doesn't return early
-      // mockDb.entities.*.set() returns a new immutable mockDb
-      const mockDb = MockDb.createMockDb().entities.InProcess_Collections.set({
-        id: `${collection.toLowerCase()}_${event.chainId}`,
-        address: collection.toLowerCase(),
-        name: "Test Collection",
-        uri: "https://example.com/contract",
-        default_admin: defaultAdmin.toLowerCase(),
-        chain_id: event.chainId,
+      const saleId = `${collection}_${tokenId}_${transferEvent.chainId}`;
+      const sale: Primary_Sales = {
+        id: saleId,
+        collection,
+        token_id: tokenId,
+        price_per_token: pricePerToken,
+        funds_recipient: FUNDS_RECIPIENT.toLowerCase(),
+        currency,
+        sale_start: undefined,
+        sale_end: undefined,
+        max_tokens_per_address: undefined,
+        chain_id: transferEvent.chainId,
+        transaction_hash: txHash,
         created_at: 0,
-        updated_at: 0,
-        transaction_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-      });
+      };
 
-      const mockDbUpdated = await InProcessMoment.TransferSingle.processEvent({
-        event,
+      let mockDb = MockDb.createMockDb().entities.Primary_Sales.set(sale);
+      mockDb = await InProcessMoment.TransferSingle.processEvent({ event: transferEvent, mockDb });
+      const mockDbUpdated = await InProcessERC20Minter.ERC20RewardsDeposit.processEvent({
+        event: depositEvent,
         mockDb,
       });
 
-      const entityId = `${collection.toLowerCase()}_${tokenId.toString()}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const actualEntity = mockDbUpdated.entities.Collectors.get(entityId);
+      const entityId = `${collection}_${tokenId}_${transferEvent.chainId}_${txHash}`;
+      const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
-      const expectedEntity: Collectors = {
-        id: entityId,
-        collection: collection.toLowerCase(),
-        token_id: tokenId,
-        amount,
-        chain_id: event.chainId,
-        collector: collector.toLowerCase(),
-        transaction_hash: event.transaction.hash,
-        collected_at: event.block.timestamp,
-      };
-
-      assert.deepEqual(
-        actualEntity,
-        expectedEntity,
-        "Collectors entity should match expected values"
-      );
+      assert.ok(actualEntity, "Transfers entity should exist");
+      assert.equal(actualEntity.payer, BUYER.toLowerCase());
+      assert.equal(actualEntity.value, pricePerToken * quantity);
+      assert.equal(actualEntity.currency, currency);
+      assert.equal(actualEntity.funds_recipient, FUNDS_RECIPIENT.toLowerCase());
     });
   });
 });

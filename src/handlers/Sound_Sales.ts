@@ -1,39 +1,37 @@
 import {
-  SuperMinterV2Sales,
+  SuperMinterV2,
   SoundEditionV2_1,
-  type SuperMinterV2Sales_MintCreated_handlerArgs,
-  type SuperMinterV2Sales_PriceSet_handlerArgs,
-  type SuperMinterV2Sales_TimeRangeSet_handlerArgs,
-  type SuperMinterV2Sales_MaxMintablePerAccountSet_handlerArgs,
+  type SuperMinterV2_MintCreated_handlerArgs,
+  type SuperMinterV2_PriceSet_handlerArgs,
+  type SuperMinterV2_TimeRangeSet_handlerArgs,
+  type SuperMinterV2_MaxMintablePerAccountSet_handlerArgs,
   type SoundEditionV2_1_FundingRecipientSet_handlerArgs,
   type SoundEditionV2_1_RoyaltySet_handlerArgs,
 } from "generated";
 import getLatestSale from "@/lib/sound_sales/getLatestSale";
 
-SuperMinterV2Sales.MintCreated.handler(
-  async ({ event, context }: SuperMinterV2Sales_MintCreated_handlerArgs) => {
+SuperMinterV2.MintCreated.handler(
+  async ({ event, context }: SuperMinterV2_MintCreated_handlerArgs) => {
     if (Number(event.params.creation[10]) !== 0) return; // only DEFAULT (public) mints
     const latestSale = await getLatestSale(event, context);
     context.Primary_Sales.set(latestSale);
   }
 );
 
-SuperMinterV2Sales.PriceSet.handler(
-  async ({ event, context }: SuperMinterV2Sales_PriceSet_handlerArgs) => {
-    const edition = event.params.edition.toLowerCase();
-    const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
-    const existing = await context.Primary_Sales.get(entityId);
-    if (!existing) return;
-    context.Primary_Sales.set({
-      ...existing,
-      price_per_token: event.params.price,
-      created_at: event.block.timestamp,
-    });
-  }
-);
+SuperMinterV2.PriceSet.handler(async ({ event, context }: SuperMinterV2_PriceSet_handlerArgs) => {
+  const edition = event.params.edition.toLowerCase();
+  const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
+  const existing = await context.Primary_Sales.get(entityId);
+  if (!existing) return;
+  context.Primary_Sales.set({
+    ...existing,
+    price_per_token: event.params.price,
+    created_at: event.block.timestamp,
+  });
+});
 
-SuperMinterV2Sales.TimeRangeSet.handler(
-  async ({ event, context }: SuperMinterV2Sales_TimeRangeSet_handlerArgs) => {
+SuperMinterV2.TimeRangeSet.handler(
+  async ({ event, context }: SuperMinterV2_TimeRangeSet_handlerArgs) => {
     const edition = event.params.edition.toLowerCase();
     const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
     const existing = await context.Primary_Sales.get(entityId);
@@ -47,8 +45,8 @@ SuperMinterV2Sales.TimeRangeSet.handler(
   }
 );
 
-SuperMinterV2Sales.MaxMintablePerAccountSet.handler(
-  async ({ event, context }: SuperMinterV2Sales_MaxMintablePerAccountSet_handlerArgs) => {
+SuperMinterV2.MaxMintablePerAccountSet.handler(
+  async ({ event, context }: SuperMinterV2_MaxMintablePerAccountSet_handlerArgs) => {
     const edition = event.params.edition.toLowerCase();
     const entityId = `${edition}_${event.params.tier}_${event.chainId}`;
     const existing = await context.Primary_Sales.get(entityId);
