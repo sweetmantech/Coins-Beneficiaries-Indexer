@@ -43,16 +43,6 @@ type InProcess_Comments {
   transaction_hash: String!
 }
 
-type InProcess_Airdrops {
-  id: ID!
-  recipient: String!
-  collection: String!
-  token_id: BigInt!
-  amount: BigInt!
-  chain_id: Int!
-  updated_at: Int!
-}
-
 type Catalog_Moments {
   id: ID!
   collection: String!
@@ -163,30 +153,6 @@ type Transfers {
   funds_recipient: String
   transaction_hash: String!
   block_number: BigInt!
-  transferred_at: Int!
-}
-
-type Collectors {
-  id: ID!
-  collection: String!
-  token_id: BigInt!
-  amount: BigInt!
-  chain_id: Int!
-  collector: String!
-  transaction_hash: String!
-  collected_at: Int!
-}
-
-type Payments {
-  id: ID!
-  collection: String!
-  currency: String!
-  token_id: BigInt!
-  recipient: String!
-  spender: String!
-  amount: String!
-  chain_id: Int!
-  transaction_hash: String!
   transferred_at: Int!
 }
 
