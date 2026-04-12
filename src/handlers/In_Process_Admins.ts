@@ -4,11 +4,10 @@ import {
   type InProcessMoment_UpdatedPermissions_handlerArgs,
 } from "generated";
 import { FACTORY_ADDRESSES } from "@/lib/consts";
+import { getLatestAdmin } from "@/lib/in_process_admins/getLatestAdmin";
 
 InProcessMoment.UpdatedPermissions.handler(
   async ({ event, context }: InProcessMoment_UpdatedPermissions_handlerArgs) => {
-    if (FACTORY_ADDRESSES.includes(event.params.user.toLowerCase())) return;
-
     const entity: InProcess_Admins = {
       id: `${event.srcAddress.toLowerCase()}_${event.chainId}_${event.params.tokenId.toString()}_${event.params.user.toLowerCase()}`,
       collection: event.srcAddress.toLowerCase(),
@@ -19,7 +18,11 @@ InProcessMoment.UpdatedPermissions.handler(
       updated_at: event.block.timestamp,
     };
 
-    context.InProcess_Admins.set(entity);
+    if (FACTORY_ADDRESSES.includes(event.params.user.toLowerCase())) return;
+
+    const latestAdmin = await getLatestAdmin(entity, context);
+
+    context.InProcess_Admins.set(latestAdmin);
   },
   {
     eventFilters: [

@@ -4,6 +4,7 @@ import {
   type CatalogRelease1155_ContractPermissionsUpdated_handlerArgs,
   type CatalogRelease1155_TokenPermissionsUpdated_handlerArgs,
 } from "generated";
+import { getLatestAdmin } from "@/lib/catalog_admins/getLatestAdmin";
 import { hasFullAdminScope } from "@/lib/catalog_admins/hasFullAdminScope";
 
 // contract-level: tokenId = 0
@@ -23,7 +24,8 @@ CatalogRelease1155.ContractPermissionsUpdated.handler(
       updated_at: event.block.timestamp,
     };
 
-    context.Catalog_Admins.set(entity);
+    const latestAdmin = await getLatestAdmin(entity, context);
+    context.Catalog_Admins.set(latestAdmin);
   }
 );
 
@@ -43,6 +45,7 @@ CatalogRelease1155.TokenPermissionsUpdated.handler(
       updated_at: event.block.timestamp,
     };
 
-    context.Catalog_Admins.set(entity);
+    const latestAdmin = await getLatestAdmin(entity, context);
+    context.Catalog_Admins.set(latestAdmin);
   }
 );

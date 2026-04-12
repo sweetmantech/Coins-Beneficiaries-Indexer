@@ -116,6 +116,10 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+
+  - name: SoundEditionV2_1Transfers
+    handler: src/EventHandlers.ts
+    events:
       - event: "Minted(uint8 tier, address to, uint256 quantity, uint256 fromTokenId)"
         field_selection:
           transaction_fields:
@@ -259,7 +263,7 @@ networks:
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
-        start_block: 44239100
+      - name: SoundEditionV2_1Transfers
       - name: SoundMetadata
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"

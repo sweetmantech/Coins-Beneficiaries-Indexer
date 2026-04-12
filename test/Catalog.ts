@@ -128,6 +128,43 @@ describe("Catalog Event Handler Tests", () => {
         "updated_at should be refreshed"
       );
     });
+
+    it("should not update if updated_at is more recent", async () => {
+      const collection = COLLECTION.toLowerCase();
+
+      const event = CatalogRelease1155.URI.createMockEvent({
+        value: "ipfs://new-uri",
+        id: 0n,
+      });
+
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+
+      const originalUri = "ipfs://original-uri";
+      const futureTimestamp = event.block.timestamp + 9999;
+
+      const mockDb = MockDb.createMockDb().entities.Catalog_Collections.set({
+        id: `${collection}_${event.chainId}`,
+        address: collection,
+        name: "My Release",
+        creator: CREATOR.toLowerCase(),
+        uri: originalUri,
+        chain_id: event.chainId,
+        created_at: 0,
+        updated_at: futureTimestamp,
+        transaction_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      });
+
+      const mockDbUpdated = await CatalogRelease1155.URI.processEvent({ event, mockDb });
+
+      const entityId = `${collection}_${event.chainId}`;
+      const actualEntity = await mockDbUpdated.entities.Catalog_Collections.get(entityId);
+
+      assert.equal(
+        actualEntity?.uri,
+        originalUri,
+        "uri should not change when entity is more recent"
+      );
+    });
   });
 
   describe("CatalogRelease1155.TokenCreated", () => {
@@ -302,6 +339,40 @@ describe("Catalog Event Handler Tests", () => {
         actualEntity?.auth_scope,
         AUTH_SCOPE_OWNER,
         "same-block update should overwrite"
+      );
+    });
+
+    it("should not overwrite a more recent entity", async () => {
+      const collection = COLLECTION.toLowerCase();
+
+      const event = CatalogRelease1155.ContractPermissionsUpdated.createMockEvent({
+        user: ARTIST,
+        authScope: BigInt(AUTH_SCOPE_OWNER),
+      });
+      (event as { srcAddress: string }).srcAddress = COLLECTION;
+
+      const entityId = `${collection}_${event.chainId}_0_${ARTIST.toLowerCase()}`;
+      const futureTimestamp = event.block.timestamp + 9999;
+      const mockDb = MockDb.createMockDb().entities.Catalog_Admins.set({
+        id: entityId,
+        collection,
+        token_id: 0n,
+        admin: ARTIST.toLowerCase(),
+        chain_id: event.chainId,
+        auth_scope: AUTH_SCOPE_OWNER | AUTH_SCOPE_ARTIST,
+        updated_at: futureTimestamp,
+      });
+
+      const mockDbUpdated = await CatalogRelease1155.ContractPermissionsUpdated.processEvent({
+        event,
+        mockDb,
+      });
+
+      const actualEntity = await mockDbUpdated.entities.Catalog_Admins.get(entityId);
+      assert.equal(
+        actualEntity?.auth_scope,
+        AUTH_SCOPE_OWNER | AUTH_SCOPE_ARTIST,
+        "auth_scope should not change when entity is more recent"
       );
     });
 
@@ -480,6 +551,45 @@ describe("Catalog Event Handler Tests", () => {
       };
 
       assert.deepEqual(actualEntity, expectedEntity);
+    });
+
+    it("should not overwrite a more recent Catalog_Sales entity", async () => {
+      const tokenId = 1n;
+      const collection = COLLECTION.toLowerCase();
+      const originalPrice = 1_000_000n;
+
+      const event = USDCFixedPriceController.MintConfigurationUpdated.createMockEvent({
+        releaseContract: COLLECTION,
+        tokenId,
+        configuration: [5_000_000n, CREATOR],
+      });
+
+      const futureTimestamp = event.block.timestamp + 9999;
+
+      const mockDb = MockDb.createMockDb().entities.Primary_Sales.set({
+        id: `${collection}_${tokenId}_${event.chainId}`,
+        collection,
+        token_id: tokenId,
+        price_per_token: originalPrice,
+        funds_recipient: CREATOR.toLowerCase(),
+        currency: USDC_ADDRESSES[event.chainId] ?? "",
+        sale_start: BigInt(0),
+        sale_end: maxUint256,
+        max_tokens_per_address: maxUint256,
+        chain_id: event.chainId,
+        created_at: futureTimestamp,
+        transaction_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      });
+
+      const mockDbUpdated = await USDCFixedPriceController.MintConfigurationUpdated.processEvent({
+        event,
+        mockDb,
+      });
+
+      const entityId = `${collection}_${tokenId}_${event.chainId}`;
+      const actualEntity = await mockDbUpdated.entities.Primary_Sales.get(entityId);
+
+      assert.equal(actualEntity?.price_per_token, originalPrice, "price should not change");
     });
   });
 

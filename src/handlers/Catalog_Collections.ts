@@ -7,7 +7,10 @@ import {
   type CatalogRelease1155_URI_handlerArgs,
   type contractRegistrations,
 } from "generated";
+import getValidateExistingCollection from "@/lib/catalog_collections/getValidateExistingEntity";
+import getExistingMoment from "@/lib/catalog_moments/getExistingEntity";
 import getNameFromCalldata from "@/lib/catalog_collections/getNameFromCalldata";
+import { getLatestAdmin } from "@/lib/catalog_admins/getLatestAdmin";
 import { AUTH_SCOPE_OWNER, AUTH_SCOPE_ARTIST } from "@/lib/consts";
 
 CatalogReleaseFactory.CRContractCreated.contractRegister(
@@ -50,29 +53,31 @@ CatalogReleaseFactory.CRContractCreated.handler(
       auth_scope: AUTH_SCOPE_OWNER | AUTH_SCOPE_ARTIST,
       updated_at: event.block.timestamp,
     };
-    context.Catalog_Admins.set(artistAdmin);
+    const latestAdmin = await getLatestAdmin(artistAdmin, context);
+    context.Catalog_Admins.set(latestAdmin);
   }
 );
 
 CatalogRelease1155.URI.handler(async ({ event, context }: CatalogRelease1155_URI_handlerArgs) => {
   if (event.params.id === BigInt(0)) {
-    const existingEntity = await context.Catalog_Collections.get(
-      `${event.srcAddress.toLowerCase()}_${event.chainId}`
-    );
+    // id 0 is CONTRACT_BASE_ID — contract-level metadata URI
+    const existingEntity = await getValidateExistingCollection(event, context);
+    if (!existingEntity) return;
+
     context.Catalog_Collections.set({
-      ...existingEntity!,
+      ...existingEntity,
       uri: event.params.value,
       updated_at: event.block.timestamp,
     });
-    return;
-  }
-  const existingEntity = await context.Catalog_Moments.get(
-    `${event.srcAddress.toLowerCase()}_${event.params.id}_${event.chainId}`
-  );
+  } else {
+    // token-level URI update
+    const existingEntity = await getExistingMoment(event, context);
+    if (!existingEntity) return;
 
-  context.Catalog_Moments.set({
-    ...existingEntity!,
-    uri: event.params.value,
-    updated_at: event.block.timestamp,
-  });
+    context.Catalog_Moments.set({
+      ...existingEntity,
+      uri: event.params.value,
+      updated_at: event.block.timestamp,
+    });
+  }
 });
