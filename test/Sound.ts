@@ -6,11 +6,18 @@ import type {
   Sound_Moments,
   Primary_Sales,
   Secondary_Sales,
-  Collectors,
+  Transfers,
   Payments,
 } from "generated";
 
-const { MockDb, SoundCreatorV2, SoundMetadata, SuperMinterV2, SoundEditionV2_1 } = TestHelpers;
+const {
+  MockDb,
+  SoundCreatorV2,
+  SoundMetadata,
+  SuperMinterV2,
+  SoundEditionV2_1,
+  SoundEditionV2_1Transfers,
+} = TestHelpers;
 
 const EDITION = "0x38125f59663ad6b9f84efdb790dcde61692adec4";
 const OWNER = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -479,152 +486,99 @@ describe("SuperMinterV2 Handler Tests", () => {
 });
 
 // ─────────────────────────────────────────────────────────
-// Sound_Collectors Handler Tests
+// Sound_Transfers Handler Tests
 // ─────────────────────────────────────────────────────────
 
 const COLLECTOR = "0xcccccccccccccccccccccccccccccccccccccccc";
-const FUNDING_RECIPIENT = "0xdddddddddddddddddddddddddddddddddddddddd";
 
-// MintedLogData tuple: [quantity, fromTokenId, allowlisted, allowlistedQuantity,
-//   signedQuantity, signedClaimTicket, affiliate, affiliated,
-//   requiredEtherValue, unitPrice, finalArtistFee, finalAffiliateFee, finalPlatformFee]
-function makeMintedData(finalArtistFee: bigint) {
-  return [
-    2n, // [0] quantity
-    1n, // [1] fromTokenId
-    ZERO_BYTES32, // [2] allowlisted (bytes32)
-    0n, // [3] allowlistedQuantity
-    0n, // [4] signedQuantity
-    0n, // [5] signedClaimTicket
-    zeroAddress, // [6] affiliate
-    false, // [7] affiliated
-    finalArtistFee, // [8] requiredEtherValue
-    500_000n, // [9] unitPrice
-    finalArtistFee, // [10] finalArtistFee
-    0n, // [11] finalAffiliateFee
-    0n, // [12] finalPlatformFee
-  ] as [
-    bigint,
-    bigint,
-    string,
-    bigint,
-    bigint,
-    bigint,
-    string,
-    boolean,
-    bigint,
-    bigint,
-    bigint,
-    bigint,
-    bigint,
-  ];
-}
-
-describe("SuperMinterV2.Minted Handler Tests", () => {
-  it("should create Collectors entity", async () => {
+describe("SoundEditionV2_1Transfers.Minted Handler Tests", () => {
+  it("should create Transfers entity", async () => {
     const mockDb = MockDb.createMockDb();
 
-    const event = SuperMinterV2.Minted.createMockEvent({
-      edition: EDITION as `0x${string}`,
+    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
       tier: 0n,
-      scheduleNum: 0n,
       to: COLLECTOR as `0x${string}`,
-      data: makeMintedData(0n),
-      attributionId: 0n,
+      quantity: 2n,
+      fromTokenId: 1n,
     });
+    (event as { srcAddress: string }).srcAddress = EDITION;
 
-    const db = await SuperMinterV2.Minted.processEvent({ event, mockDb });
+    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
 
     const id = `${EDITION}_0_${event.chainId}_${event.block.number}_${event.logIndex}`;
-    const actual = await db.entities.Collectors.get(id);
+    const actual = await db.entities.Transfers.get(id);
 
-    const expected: Collectors = {
+    const expected: Transfers = {
       id,
       collection: EDITION,
       token_id: 1n,
-      amount: 2n,
       chain_id: event.chainId,
-      collector: COLLECTOR.toLowerCase(),
+      recipient: COLLECTOR.toLowerCase(),
+      quantity: 2n,
+      payer: undefined,
+      value: undefined,
+      currency: undefined,
+      funds_recipient: undefined,
       transaction_hash: event.transaction.hash,
-      collected_at: event.block.timestamp,
+      block_number: BigInt(event.block.number),
+      transferred_at: event.block.timestamp,
     };
 
     assert.deepEqual(actual, expected);
   });
 
-  it("should skip Payments when finalArtistFee is 0", async () => {
+  it("should not create Payments entity", async () => {
     const mockDb = MockDb.createMockDb();
 
-    const event = SuperMinterV2.Minted.createMockEvent({
-      edition: EDITION as `0x${string}`,
+    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
       tier: 0n,
-      scheduleNum: 0n,
       to: COLLECTOR as `0x${string}`,
-      data: makeMintedData(0n),
-      attributionId: 0n,
+      quantity: 2n,
+      fromTokenId: 1n,
     });
+    (event as { srcAddress: string }).srcAddress = EDITION;
 
-    const db = await SuperMinterV2.Minted.processEvent({ event, mockDb });
+    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
     const actual = await db.entities.Payments.get(id);
     assert.equal(actual, undefined);
   });
 
-  it("should create Payments with funding_recipient from Sound_Editions", async () => {
-    const mockDb = MockDb.createMockDb().entities.Sound_Editions.set({
-      id: `${EDITION}_8453`,
-      address: EDITION,
-      name: "Test",
-      owner: OWNER,
-      uri: "",
-      base_uri: "",
-      funding_recipient: FUNDING_RECIPIENT,
-      royalty_bps: 1000,
-      chain_id: 8453,
-      created_at: 0,
-      updated_at: 0,
-      transaction_hash: "0x00",
-    });
-
-    const event = SuperMinterV2.Minted.createMockEvent({
-      edition: EDITION as `0x${string}`,
-      tier: 0n,
-      scheduleNum: 0n,
-      to: COLLECTOR as `0x${string}`,
-      data: makeMintedData(1_000_000n),
-      attributionId: 0n,
-      mockEventData: { chainId: 8453 },
-    });
-
-    const db = await SuperMinterV2.Minted.processEvent({ event, mockDb });
-
-    const id = `8453_${event.block.number}_${event.logIndex}`;
-    const actual = await db.entities.Payments.get(id);
-
-    assert.equal(actual?.recipient, FUNDING_RECIPIENT);
-    assert.equal(actual?.spender, COLLECTOR.toLowerCase());
-    assert.equal(actual?.collection, EDITION);
-  });
-
-  it("should fallback to edition address when Sound_Editions not found", async () => {
+  it("should set token_id to tier plus one", async () => {
     const mockDb = MockDb.createMockDb();
 
-    const event = SuperMinterV2.Minted.createMockEvent({
-      edition: EDITION as `0x${string}`,
-      tier: 0n,
-      scheduleNum: 0n,
+    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
+      tier: 1n,
       to: COLLECTOR as `0x${string}`,
-      data: makeMintedData(1_000_000n),
-      attributionId: 0n,
+      quantity: 1n,
+      fromTokenId: 1n,
     });
+    (event as { srcAddress: string }).srcAddress = EDITION;
 
-    const db = await SuperMinterV2.Minted.processEvent({ event, mockDb });
+    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
 
-    const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    const actual = await db.entities.Payments.get(id);
+    const id = `${EDITION}_1_${event.chainId}_${event.block.number}_${event.logIndex}`;
+    const actual = await db.entities.Transfers.get(id);
+    assert.equal(actual?.token_id, 2n);
+  });
 
-    assert.equal(actual?.recipient, EDITION);
+  it("should set collection to srcAddress", async () => {
+    const mockDb = MockDb.createMockDb();
+
+    const event = SoundEditionV2_1Transfers.Minted.createMockEvent({
+      tier: 0n,
+      to: COLLECTOR as `0x${string}`,
+      quantity: 1n,
+      fromTokenId: 1n,
+    });
+    (event as { srcAddress: string }).srcAddress = EDITION;
+
+    const db = await SoundEditionV2_1Transfers.Minted.processEvent({ event, mockDb });
+
+    const id = `${EDITION}_0_${event.chainId}_${event.block.number}_${event.logIndex}`;
+    const actual = await db.entities.Transfers.get(id);
+    assert.equal(actual?.collection, EDITION);
   });
 });
 
