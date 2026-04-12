@@ -63,7 +63,7 @@ InProcessMoment.UpdatedRoyalties.handler(
 
 InProcessMoment.URI.handler(async ({ event, context }: InProcessMoment_URI_handlerArgs) => {
   const existingEntity = await context.InProcess_Moments.get(
-    `${event.srcAddress.toLowerCase()}_${Number(event.params.id)}_${event.chainId}`
+    `${event.srcAddress.toLowerCase()}_${event.params.id}_${event.chainId}`
   );
 
   const entity: InProcess_Moments = {
