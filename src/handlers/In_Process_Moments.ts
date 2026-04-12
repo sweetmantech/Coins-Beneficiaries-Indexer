@@ -65,9 +65,11 @@ InProcessMoment.URI.handler(async ({ event, context }: InProcessMoment_URI_handl
   const existingEntity = await context.InProcess_Moments.get(
     `${event.srcAddress.toLowerCase()}_${event.params.id}_${event.chainId}`
   );
+  // URI fires before SetupNewToken in the same tx — skip if entity not yet created
+  if (!existingEntity) return;
 
   const entity: InProcess_Moments = {
-    ...existingEntity!,
+    ...existingEntity,
     updated_at: event.block.timestamp,
     uri: event.params.value,
   };

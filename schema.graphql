@@ -147,10 +147,8 @@ type Transfers {
   recipient: String!
   quantity: BigInt!
   # InProcess only — null for Catalog/Sound.xyz
-  payer: String
   value: BigInt
   currency: String
-  funds_recipient: String
   transaction_hash: String!
   block_number: BigInt!
   transferred_at: Int!

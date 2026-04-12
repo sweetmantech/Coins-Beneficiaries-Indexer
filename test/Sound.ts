@@ -253,6 +253,23 @@ const MINT_CREATION = [
   string,
 ];
 
+function makeBaseEdition(chainId: number): Sound_Editions {
+  return {
+    id: `${EDITION}_${chainId}`,
+    address: EDITION,
+    name: "Test",
+    owner: OWNER,
+    uri: "",
+    base_uri: "",
+    funding_recipient: zeroAddress,
+    royalty_bps: 500,
+    chain_id: chainId,
+    created_at: 0,
+    updated_at: 0,
+    transaction_hash: "0x00",
+  };
+}
+
 function makeBasePrimarySale(chainId: number): Primary_Sales {
   return {
     id: `${EDITION}_0_${chainId}`,
@@ -480,10 +497,8 @@ describe("SoundEditionV2_1.Minted Handler Tests", () => {
       chain_id: event.chainId,
       recipient: COLLECTOR.toLowerCase(),
       quantity: 2n,
-      payer: undefined,
       value: undefined,
       currency: undefined,
-      funds_recipient: undefined,
       transaction_hash: event.transaction.hash,
       block_number: BigInt(event.block.number),
       transferred_at: event.block.timestamp,
@@ -575,7 +590,9 @@ describe("SoundEditionV2_1 Handler Tests", () => {
         transaction_hash: "0x00",
       };
 
-      const mockDb = MockDb.createMockDb().entities.Secondary_Sales.set(secondary);
+      const mockDb = MockDb.createMockDb()
+        .entities.Sound_Editions.set(makeBaseEdition(event.chainId))
+        .entities.Secondary_Sales.set(secondary);
 
       const db = await SoundEditionV2_1.FundingRecipientSet.processEvent({ event, mockDb });
 
@@ -591,6 +608,7 @@ describe("SoundEditionV2_1 Handler Tests", () => {
       (event as { srcAddress: string }).srcAddress = EDITION;
 
       const mockDb = MockDb.createMockDb()
+        .entities.Sound_Editions.set(makeBaseEdition(8453))
         .entities.Sound_Moments.set({
           id: `${EDITION}_0_8453`,
           collection: EDITION,
@@ -622,11 +640,13 @@ describe("SoundEditionV2_1 Handler Tests", () => {
       (event as { srcAddress: string }).srcAddress = EDITION;
 
       // Primary_Sales exists for tier 0, no Sound_Moments row — should still be updated
-      const mockDb = MockDb.createMockDb().entities.Primary_Sales.set({
-        ...makeBasePrimarySale(8453),
-        id: `${EDITION}_0_8453`,
-        funds_recipient: zeroAddress,
-      });
+      const mockDb = MockDb.createMockDb()
+        .entities.Sound_Editions.set(makeBaseEdition(8453))
+        .entities.Primary_Sales.set({
+          ...makeBasePrimarySale(8453),
+          id: `${EDITION}_0_8453`,
+          funds_recipient: zeroAddress,
+        });
 
       const db = await SoundEditionV2_1.FundingRecipientSet.processEvent({ event, mockDb });
 
@@ -680,7 +700,9 @@ describe("SoundEditionV2_1 Handler Tests", () => {
         transaction_hash: "0x00",
       };
 
-      const mockDb = MockDb.createMockDb().entities.Secondary_Sales.set(secondary);
+      const mockDb = MockDb.createMockDb()
+        .entities.Sound_Editions.set(makeBaseEdition(event.chainId))
+        .entities.Secondary_Sales.set(secondary);
 
       const db = await SoundEditionV2_1.RoyaltySet.processEvent({ event, mockDb });
 

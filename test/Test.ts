@@ -168,10 +168,8 @@ describe("Event Handler Tests", () => {
         chain_id: event.chainId,
         recipient: BUYER.toLowerCase(),
         quantity,
-        payer: undefined,
         value: undefined,
         currency: undefined,
-        funds_recipient: undefined,
         transaction_hash: txHash,
         block_number: BigInt(event.block.number),
         transferred_at: event.block.timestamp,
@@ -235,10 +233,8 @@ describe("Event Handler Tests", () => {
       const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
       assert.ok(actualEntity, "Transfers entity should exist");
-      assert.equal(actualEntity.payer, BUYER.toLowerCase());
       assert.equal(actualEntity.value, value);
       assert.equal(actualEntity.currency, zeroAddress);
-      assert.equal(actualEntity.funds_recipient, FUNDS_RECIPIENT.toLowerCase());
     });
   });
 
@@ -342,10 +338,8 @@ describe("Event Handler Tests", () => {
         chain_id: event.chainId,
         recipient: BUYER.toLowerCase(),
         quantity: amount,
-        payer: undefined,
         value: undefined,
         currency: undefined,
-        funds_recipient: undefined,
         transaction_hash: event.transaction.hash,
         block_number: BigInt(event.block.number),
         transferred_at: event.block.timestamp,
@@ -408,10 +402,8 @@ describe("Event Handler Tests", () => {
       const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
       assert.ok(actualEntity, "Transfers entity should exist");
-      assert.equal(actualEntity.payer, BUYER.toLowerCase());
       assert.equal(actualEntity.value, pricePerToken * quantity);
       assert.equal(actualEntity.currency, currency);
-      assert.equal(actualEntity.funds_recipient, FUNDS_RECIPIENT.toLowerCase());
     });
   });
 });

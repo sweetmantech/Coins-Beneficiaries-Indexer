@@ -95,13 +95,14 @@ SoundEditionV2_1.FundingRecipientSet.handler(
     });
 
     const secondary = await context.Secondary_Sales.get(`${address}_0_${chainId}`);
-    if (!secondary) return;
-    context.Secondary_Sales.set({
-      ...secondary,
-      royalty_recipient: recipient,
-      updated_at: event.block.timestamp,
-      transaction_hash: event.transaction.hash,
-    });
+    if (secondary) {
+      context.Secondary_Sales.set({
+        ...secondary,
+        royalty_recipient: recipient,
+        updated_at: event.block.timestamp,
+        transaction_hash: event.transaction.hash,
+      });
+    }
 
     // Update Primary_Sales for all schedules on this edition
     const primarySales = await context.Primary_Sales.getWhere.collection.eq(address);

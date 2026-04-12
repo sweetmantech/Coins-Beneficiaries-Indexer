@@ -20,11 +20,8 @@ InProcessMoment.TransferSingle.handler(
       chain_id: event.chainId,
       recipient: event.params.to.toLowerCase(),
       quantity: event.params.value,
-      // payer is filled in by Purchased/ERC20RewardsDeposit; stays undefined for admin mints (airdrop)
-      payer: undefined,
       value: undefined,
       currency: undefined,
-      funds_recipient: undefined,
       transaction_hash: event.transaction.hash,
       block_number: BigInt(event.block.number),
       transferred_at: event.block.timestamp,
@@ -33,7 +30,7 @@ InProcessMoment.TransferSingle.handler(
   { eventFilters: [{ from: zeroAddress }] }
 );
 
-// Step 2a — ETH mint: updates Transfer with payer, value, funds_recipient from Primary_Sales
+// Step 2a — ETH mint: updates Transfer with value + currency
 InProcessMoment.Purchased.handler(
   async ({ event, context }: InProcessMoment_Purchased_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
@@ -46,20 +43,15 @@ InProcessMoment.Purchased.handler(
     const transfer = await context.Transfers.get(id);
     if (!transfer) return;
 
-    const saleId = `${collection}_${event.params.tokenId.toString()}_${event.chainId}`;
-    const sale = await context.Primary_Sales.get(saleId);
-
     context.Transfers.set({
       ...transfer,
-      payer: event.params.sender.toLowerCase(),
       value: event.params.value,
       currency: zeroAddress,
-      funds_recipient: sale?.funds_recipient,
     });
   }
 );
 
-// Step 2b — ERC20 mint: updates Transfer with payer, value, currency, funds_recipient from Primary_Sales
+// Step 2b — ERC20 mint: updates Transfer with value + currency from Primary_Sales
 InProcessERC20Minter.ERC20RewardsDeposit.handler(
   async ({ event, context }: InProcessERC20Minter_ERC20RewardsDeposit_handlerArgs) => {
     const collection = event.params.collection.toLowerCase();
@@ -78,11 +70,8 @@ InProcessERC20Minter.ERC20RewardsDeposit.handler(
 
     context.Transfers.set({
       ...transfer,
-      // buyer address not in ERC20RewardsDeposit — use recipient as proxy (self-mint assumption)
-      payer: transfer.recipient,
       value: sale.price_per_token * transfer.quantity,
       currency: sale.currency,
-      funds_recipient: sale.funds_recipient,
     });
   }
 );
