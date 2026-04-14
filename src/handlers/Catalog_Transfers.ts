@@ -54,7 +54,6 @@ CatalogRelease1155.AlbumPurchased.handler(
   }
 );
 
-// Admin mint (airdrop) — triggered by mintTokenAdmin(), no payment involved
 CatalogRelease1155.TokenMinted.handler(
   async ({ event, context }: CatalogRelease1155_TokenMinted_handlerArgs) => {
     const entity: Transfers = {
