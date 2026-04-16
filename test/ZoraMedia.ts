@@ -231,6 +231,38 @@ describe("ZoraMedia Handler Tests", () => {
       );
     });
 
+    it("should recover IPFS token and metadata URIs from non-mint calldata (e.g. sudoswap-style layout)", async () => {
+      const mockDb = MockDb.createMockDb();
+      const tokenId = 31873n;
+      const tokenURI = "ipfs://bafkreihqzx47a24svnhfxw3sbzzaytm7x4q2osoem4n2l56z6ruatfq7oy";
+      const metadataURI = "ipfs://bafkreicx24kezrnkw2mbas3c2wsnjwrqsio3is7upsieqa3hybkf45i4pa";
+
+      const event = ZoraMedia.Transfer.createMockEvent({
+        from: zeroAddress,
+        to: "0xc197c5863b2d96f841e2d095d036a3be3917b6d7",
+        tokenId,
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+      (
+        event as {
+          transaction: { hash: string; input: string };
+        }
+      ).transaction.input =
+        "0x62149ad500000000000000000000000000000000000000000000000000000000013767dc" +
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+        "697066733a2f2f6261666b72656968717a78343761323473766e686678773373627a7a6179746d37783471326f736f656d346e326c35367a36727561746671376f79" +
+        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042" +
+        "697066733a2f2f6261666b726569637832346b657a726e6b77326d62617333633277736e6a77727173696f3369733775707369657161336879626b66343569347061";
+
+      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.ZoraMedia_Moments.get(entityId);
+
+      assert.equal(actualEntity?.uri, tokenURI);
+      assert.equal(actualEntity?.metadata_uri, metadataURI);
+    });
+
     it("should decode Safe-wrapped calldata and set initial token URIs", async () => {
       const mockDb = MockDb.createMockDb();
       const tokenId = 7940n;

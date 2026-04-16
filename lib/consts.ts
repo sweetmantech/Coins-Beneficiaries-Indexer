@@ -16,6 +16,11 @@ export const USDC_ADDRESSES: Record<number, string> = {
 };
 
 export const SAFE_EXEC_TRANSACTION_SELECTOR = "0x6a761202";
+export const URL_PREFIXES_HEX = [
+  ["68747470733a2f2f", "https://"],
+  ["697066733a2f2f", "ipfs://"],
+  ["61723a2f2f", "ar://"],
+] as const;
 
 export type ZoraMediaUris = {
   tokenURI: string;
