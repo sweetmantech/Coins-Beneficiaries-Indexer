@@ -149,6 +149,67 @@ describe("ZoraMedia Handler Tests", () => {
       assert.equal(actualEntity?.metadata_uri, metadataURI);
     });
 
+    it("should decode legacy mint calldata and set initial token URIs", async () => {
+      const mockDb = MockDb.createMockDb();
+      const tokenId = 145n;
+
+      const event = ZoraMedia.Transfer.createMockEvent({
+        from: zeroAddress,
+        to: "0x517bab7661c315c63c6465eed1b4248e6f7fe183",
+        tokenId,
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+      (
+        event as {
+          transaction: { hash: string; input: string };
+        }
+      ).transaction.input =
+        "0x428284f7000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000000000000000000000000004e1003b28d9280000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000001004a41e993bdd8b97d0342c999efb22f7ba20d07f39f9c4cdd6c854c0d9f45e5d3dfd1253bbd01972e58cce15236d82d805410d0ff7bc9b3b25636e933d8db075d000000000000000000000000000000000000000000000000000000000000005c68747470733a2f2f696d616765732e6d6972726f722d6d656469612e78797a2f7075626c69636174696f6e2d696d616765732f35653834373134342d323131302d343665622d386530622d3430623162393539396639612e6a70656700000000000000000000000000000000000000000000000000000000000000000000004a68747470733a2f2f73332d75732d776573742d322e616d617a6f6e6177732e636f6d2f6d657461646174612e6d6972726f722e78797a2f73636973736f722d6c6162656c732e6a736f6e00000000000000000000000000000000000000000000";
+
+      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.ZoraMedia_Moments.get(entityId);
+
+      assert.equal(
+        actualEntity?.uri,
+        "https://images.mirror-media.xyz/publication-images/5e847144-2110-46eb-8e0b-40b1b9599f9a.jpeg"
+      );
+      assert.equal(
+        actualEntity?.metadata_uri,
+        "https://s3-us-west-2.amazonaws.com/metadata.mirror.xyz/scissor-labels.json"
+      );
+    });
+
+    it("should decode mirror wrapper calldata and set initial token URIs", async () => {
+      const mockDb = MockDb.createMockDb();
+      const tokenId = 2394n;
+
+      const event = ZoraMedia.Transfer.createMockEvent({
+        from: zeroAddress,
+        to: "0x00055b597e0050405b27c90d21343b1eb5b74165",
+        tokenId,
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+      (
+        event as {
+          transaction: { hash: string; input: string };
+        }
+      ).transaction.input =
+        "0xd09a71d6000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000000000000000000000000004e1003b28d9280000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e0939c892814738495ffde06bc5de098ff4bf4610adfe4cf442f6d0b237955cadaded3ec30226f0ba6a0f463069d25905d2527ca382925305abf47b96fc302bca7000000000000000000000000000000000000000000000000000000000000003a68747470733a2f2f696d616765732e6d6972726f722d6d656469612e78797a2f766964656f732f545255455f46414c53455f434152442e6d7034000000000000000000000000000000000000000000000000000000000000000000000000004468747470733a2f2f6d657461646174612e6d6972726f722d6d656469612e78797a2f6e66742f7468652d70617261646f7865732d6f662d636f696e626173652e6a736f6e00000000000000000000000000000000000000000000000000000000";
+
+      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.ZoraMedia_Moments.get(entityId);
+
+      assert.equal(actualEntity?.uri, "https://images.mirror-media.xyz/videos/TRUE_FALSE_CARD.mp4");
+      assert.equal(
+        actualEntity?.metadata_uri,
+        "https://metadata.mirror-media.xyz/nft/the-paradoxes-of-coinbase.json"
+      );
+    });
+
     it("should create Transfers entity for ZoraMedia mint", async () => {
       const mockDb = MockDb.createMockDb();
       const tokenId = 3n;

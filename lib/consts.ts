@@ -14,3 +14,8 @@ export const USDC_ADDRESSES: Record<number, string> = {
   8453: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
   84532: "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
 };
+
+export type ZoraMediaUris = {
+  tokenURI: string;
+  metadataURI: string;
+};
