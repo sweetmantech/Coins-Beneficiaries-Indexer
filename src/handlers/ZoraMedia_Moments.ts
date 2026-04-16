@@ -13,6 +13,7 @@ ZoraMedia.Transfer.handler(
   async ({ event, context }: ZoraMedia_Transfer_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const tokenId = event.params.tokenId;
+    if (tokenId === 0n) return;
     const admin = event.params.to.toLowerCase();
     const entity: ZoraMedia_Moments = {
       id: `${collection}_${tokenId}_${event.chainId}`,
@@ -60,6 +61,7 @@ ZoraMedia.TokenURIUpdated.handler(
   async ({ event, context }: ZoraMedia_TokenURIUpdated_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const tokenId = event.params._tokenId;
+    if (tokenId === 0n) return;
     const id = `${collection}_${tokenId}_${event.chainId}`;
     const existingEntity = await context.ZoraMedia_Moments.get(id);
 
@@ -84,6 +86,7 @@ ZoraMedia.TokenMetadataURIUpdated.handler(
   async ({ event, context }: ZoraMedia_TokenMetadataURIUpdated_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const tokenId = event.params._tokenId;
+    if (tokenId === 0n) return;
     const id = `${collection}_${tokenId}_${event.chainId}`;
     const existingEntity = await context.ZoraMedia_Moments.get(id);
 
