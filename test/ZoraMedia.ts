@@ -1,5 +1,5 @@
 import assert from "assert";
-import { zeroAddress } from "viem";
+import { encodeFunctionData, zeroAddress } from "viem";
 import { TestHelpers } from "generated";
 import type { Transfers, ZoraMedia_Admins, ZoraMedia_Moments } from "generated";
 
@@ -8,6 +8,47 @@ const { MockDb, ZoraMedia } = TestHelpers;
 const ZORA_MEDIA_COLLECTION = "0xabefbc9fd2f806065b4f3c237d4b59d9a97bcac7";
 const BUYER = "0xcfbf34d385ea2d5eb947063b67ea226dcda3dc38";
 const OTHER_OWNER = "0x1111111111111111111111111111111111111111";
+const zoraMediaMintAbi = [
+  {
+    type: "function",
+    name: "mint",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "data",
+        type: "tuple",
+        components: [
+          { name: "tokenURI", type: "string" },
+          { name: "metadataURI", type: "string" },
+          { name: "contentHash", type: "bytes32" },
+          { name: "metadataHash", type: "bytes32" },
+        ],
+      },
+      {
+        name: "bidShares",
+        type: "tuple",
+        components: [
+          {
+            name: "prevOwner",
+            type: "tuple",
+            components: [{ name: "value", type: "uint256" }],
+          },
+          {
+            name: "creator",
+            type: "tuple",
+            components: [{ name: "value", type: "uint256" }],
+          },
+          {
+            name: "owner",
+            type: "tuple",
+            components: [{ name: "value", type: "uint256" }],
+          },
+        ],
+      },
+    ],
+    outputs: [],
+  },
+] as const;
 
 describe("ZoraMedia Handler Tests", () => {
   describe("ZoraMedia.Transfer", () => {
@@ -41,6 +82,49 @@ describe("ZoraMedia Handler Tests", () => {
       };
 
       assert.deepEqual(actualEntity, expectedEntity);
+    });
+
+    it("should decode mint calldata and set initial token URIs", async () => {
+      const mockDb = MockDb.createMockDb();
+      const tokenId = 7n;
+      const tokenURI = "https://ipfs.example/token/7";
+      const metadataURI = "https://ipfs.example/token/7/metadata";
+
+      const event = ZoraMedia.Transfer.createMockEvent({
+        from: zeroAddress,
+        to: BUYER,
+        tokenId,
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+      (
+        event as {
+          transaction: { hash: string; input: string };
+        }
+      ).transaction.input = encodeFunctionData({
+        abi: zoraMediaMintAbi,
+        functionName: "mint",
+        args: [
+          {
+            tokenURI,
+            metadataURI,
+            contentHash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            metadataHash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          },
+          {
+            prevOwner: { value: 0n },
+            creator: { value: 0n },
+            owner: { value: 1000000000000000000n },
+          },
+        ],
+      });
+
+      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.ZoraMedia_Moments.get(entityId);
+
+      assert.equal(actualEntity?.uri, tokenURI);
+      assert.equal(actualEntity?.metadata_uri, metadataURI);
     });
 
     it("should create Transfers entity for ZoraMedia mint", async () => {

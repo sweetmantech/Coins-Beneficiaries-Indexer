@@ -8,6 +8,7 @@ import {
   type ZoraMedia_TokenMetadataURIUpdated_handlerArgs,
 } from "generated";
 import { zeroAddress } from "viem";
+import getInitialUrisFromCalldata from "@/lib/zora_media/getInitialUrisFromCalldata";
 
 ZoraMedia.Transfer.handler(
   async ({ event, context }: ZoraMedia_Transfer_handlerArgs) => {
@@ -15,13 +16,16 @@ ZoraMedia.Transfer.handler(
     const tokenId = event.params.tokenId;
     if (tokenId === 0n) return;
     const admin = event.params.to.toLowerCase();
+    const txInput = (event.transaction as { input?: string }).input ?? "0x";
+    const decodedUris = getInitialUrisFromCalldata(txInput);
+
     const entity: ZoraMedia_Moments = {
       id: `${collection}_${tokenId}_${event.chainId}`,
       collection,
       token_id: tokenId,
       owner: admin,
-      uri: undefined,
-      metadata_uri: undefined,
+      uri: decodedUris?.tokenURI,
+      metadata_uri: decodedUris?.metadataURI,
       chain_id: event.chainId,
       created_at: event.block.timestamp,
       updated_at: event.block.timestamp,
@@ -56,7 +60,6 @@ ZoraMedia.Transfer.handler(
   },
   { eventFilters: [{ from: zeroAddress }] }
 );
-
 
 ZoraMedia.TokenURIUpdated.handler(
   async ({ event, context }: ZoraMedia_TokenURIUpdated_handlerArgs) => {

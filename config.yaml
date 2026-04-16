@@ -185,6 +185,7 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+            - input
       - event: TokenURIUpdated(uint256 indexed _tokenId, address owner, string _uri)
         field_selection:
           transaction_fields:
