@@ -1,5 +1,6 @@
 import { decodeAbiParameters, decodeFunctionData } from "viem";
 import { zoraMediaMintAbi } from "@/lib/abi/zoraMediaMintAbi";
+import { safeExecTransactionLayout } from "@/lib/abi/safeExecTransactionLayout";
 import normalizeDecodedMediaData from "@/lib/zora_media/normalizeDecodedMediaData";
 import { SAFE_EXEC_TRANSACTION_SELECTOR, type ZoraMediaUris } from "@/lib/consts";
 import zoraMediaMintPayloadLayouts from "@/lib/zora_media/zoraMediaMintPayloadLayouts";
@@ -24,18 +25,7 @@ function getInitialUrisFromCalldata(input: string): ZoraMediaUris | undefined {
     if (input.startsWith(SAFE_EXEC_TRANSACTION_SELECTOR)) {
       try {
         const [, , wrappedData] = decodeAbiParameters(
-          [
-            { name: "to", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "data", type: "bytes" },
-            { name: "operation", type: "uint8" },
-            { name: "safeTxGas", type: "uint256" },
-            { name: "baseGas", type: "uint256" },
-            { name: "gasPrice", type: "uint256" },
-            { name: "gasToken", type: "address" },
-            { name: "refundReceiver", type: "address" },
-            { name: "signatures", type: "bytes" },
-          ],
+          safeExecTransactionLayout,
           (input.startsWith("0x") ? `0x${input.slice(10)}` : `0x${input.slice(8)}`) as `0x${string}`
         );
 
