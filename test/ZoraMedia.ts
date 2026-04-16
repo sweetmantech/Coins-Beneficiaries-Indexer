@@ -1,5 +1,5 @@
 import assert from "assert";
-import { encodeFunctionData, zeroAddress } from "viem";
+import { encodeAbiParameters, encodeFunctionData, zeroAddress } from "viem";
 import { TestHelpers } from "generated";
 import type { Transfers, ZoraMedia_Admins, ZoraMedia_Moments } from "generated";
 
@@ -47,6 +47,27 @@ const zoraMediaMintAbi = [
       },
     ],
     outputs: [],
+  },
+] as const;
+
+const gnosisSafeAbi = [
+  {
+    type: "function",
+    name: "execTransaction",
+    stateMutability: "payable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "value", type: "uint256" },
+      { name: "data", type: "bytes" },
+      { name: "operation", type: "uint8" },
+      { name: "safeTxGas", type: "uint256" },
+      { name: "baseGas", type: "uint256" },
+      { name: "gasPrice", type: "uint256" },
+      { name: "gasToken", type: "address" },
+      { name: "refundReceiver", type: "address" },
+      { name: "signatures", type: "bytes" },
+    ],
+    outputs: [{ name: "success", type: "bool" }],
   },
 ] as const;
 
@@ -208,6 +229,47 @@ describe("ZoraMedia Handler Tests", () => {
         actualEntity?.metadata_uri,
         "https://metadata.mirror-media.xyz/nft/the-paradoxes-of-coinbase.json"
       );
+    });
+
+    it("should decode Safe-wrapped calldata and set initial token URIs", async () => {
+      const mockDb = MockDb.createMockDb();
+      const tokenId = 7940n;
+      const tokenURI =
+        "https://storage.googleapis.com/nft-canvas/koodos/3/8/images/1644253591328.jpeg";
+      const metadataURI = "https://storage.googleapis.com/nft-canvas/koodos/3/8/metadata.json";
+
+      const event = ZoraMedia.Transfer.createMockEvent({
+        from: zeroAddress,
+        to: BUYER,
+        tokenId,
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+
+      const wrappedData = `0x84684d43${encodeAbiParameters(
+        [
+          { name: "tokenURIs", type: "string[]" },
+          { name: "metadataURIs", type: "string[]" },
+        ],
+        [[tokenURI], [metadataURI]]
+      ).slice(2)}` as `0x${string}`;
+
+      (
+        event as {
+          transaction: { hash: string; input: string };
+        }
+      ).transaction.input = encodeFunctionData({
+        abi: gnosisSafeAbi,
+        functionName: "execTransaction",
+        args: [BUYER, 0n, wrappedData, 0, 0n, 0n, 0n, zeroAddress, zeroAddress, "0x"],
+      });
+
+      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const actualEntity = mockDbUpdated.entities.ZoraMedia_Moments.get(entityId);
+
+      assert.equal(actualEntity?.uri, tokenURI);
+      assert.equal(actualEntity?.metadata_uri, metadataURI);
     });
 
     it("should create Transfers entity for ZoraMedia mint", async () => {
