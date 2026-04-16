@@ -41,6 +41,7 @@ type ZoraMedia_Admins {
   collection: String!
   token_id: BigInt!
   chain_id: Int!
+  permission: Int!
   updated_at: Int!
 }
 

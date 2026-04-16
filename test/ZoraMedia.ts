@@ -359,6 +359,7 @@ describe("ZoraMedia Handler Tests", () => {
         collection: ZORA_MEDIA_COLLECTION.toLowerCase(),
         token_id: tokenId,
         chain_id: event.chainId,
+        permission: 2,
         updated_at: event.block.timestamp,
       };
 

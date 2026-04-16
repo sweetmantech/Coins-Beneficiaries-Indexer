@@ -10,31 +10,15 @@ import {
 import { zeroAddress } from "viem";
 import getInitialUrisFromCalldata from "@/lib/zora_media/getInitialUrisFromCalldata";
 
-ZoraMedia.Transfer.handler(
-  async ({ event, context }: ZoraMedia_Transfer_handlerArgs) => {
-    const collection = event.srcAddress.toLowerCase();
-    const tokenId = event.params.tokenId;
-    if (tokenId === 0n) return;
-    const admin = event.params.to.toLowerCase();
-    const txInput = (event.transaction as { input?: string }).input ?? "0x";
-    const decodedUris = getInitialUrisFromCalldata(txInput);
+ZoraMedia.Transfer.handler(async ({ event, context }: ZoraMedia_Transfer_handlerArgs) => {
+  const collection = event.srcAddress.toLowerCase();
+  const tokenId = event.params.tokenId;
+  const fromAddress = event.params.from.toLowerCase();
+  const admin = event.params.to.toLowerCase();
 
-    const entity: ZoraMedia_Moments = {
-      id: `${collection}_${tokenId}_${event.chainId}`,
-      collection,
-      token_id: tokenId,
-      owner: admin,
-      uri: decodedUris?.tokenURI,
-      metadata_uri: decodedUris?.metadataURI,
-      chain_id: event.chainId,
-      created_at: event.block.timestamp,
-      updated_at: event.block.timestamp,
-      transaction_hash: event.transaction.hash,
-    };
-
-    context.ZoraMedia_Moments.set(entity);
+  if (fromAddress !== zeroAddress) {
     context.Transfers.set({
-      id: `${collection}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`,
+      id: `${collection}_${tokenId}_${event.chainId}`,
       collection,
       token_id: tokenId,
       chain_id: event.chainId,
@@ -47,19 +31,48 @@ ZoraMedia.Transfer.handler(
       transferred_at: event.block.timestamp,
     } as Transfers);
 
-    const adminEntity: ZoraMedia_Admins = {
-      id: `${collection}_${event.chainId}_${tokenId}_${admin}`,
+    const fromAdminEntity: ZoraMedia_Admins = {
+      id: `${collection}_${tokenId}_${event.chainId}_${fromAddress}`,
+      admin: fromAddress,
+      collection,
+      token_id: tokenId,
+      chain_id: event.chainId,
+      permission: 0,
+      updated_at: event.block.timestamp,
+    };
+
+    const toAdminEntity: ZoraMedia_Admins = {
+      id: `${collection}_${tokenId}_${event.chainId}_${admin}`,
       admin,
       collection,
       token_id: tokenId,
       chain_id: event.chainId,
+      permission: 2,
       updated_at: event.block.timestamp,
     };
 
-    context.ZoraMedia_Admins.set(adminEntity);
-  },
-  { eventFilters: [{ from: zeroAddress }] }
-);
+    context.ZoraMedia_Admins.set(fromAdminEntity);
+    context.ZoraMedia_Admins.set(toAdminEntity);
+    return;
+  }
+  const txInput = (event.transaction as { input?: string }).input ?? "0x";
+  const decodedUris = getInitialUrisFromCalldata(txInput);
+
+  const entity: ZoraMedia_Moments = {
+    id: `${collection}_${tokenId}_${event.chainId}`,
+    collection,
+    token_id: tokenId,
+    owner: admin,
+    uri: decodedUris?.tokenURI,
+    metadata_uri: decodedUris?.metadataURI,
+    chain_id: event.chainId,
+    created_at: event.block.timestamp,
+    updated_at: event.block.timestamp,
+    transaction_hash: event.transaction.hash,
+  };
+
+  context.ZoraMedia_Moments.set(entity);
+});
 
 ZoraMedia.TokenURIUpdated.handler(
   async ({ event, context }: ZoraMedia_TokenURIUpdated_handlerArgs) => {
