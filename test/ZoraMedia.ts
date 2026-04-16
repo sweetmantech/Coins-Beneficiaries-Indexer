@@ -52,6 +52,28 @@ const zoraMediaMintAbi = [
 
 describe("ZoraMedia Handler Tests", () => {
   describe("ZoraMedia.Transfer", () => {
+    it("should ignore mint events for token id 0", async () => {
+      const mockDb = MockDb.createMockDb();
+      const tokenId = 0n;
+
+      const event = ZoraMedia.Transfer.createMockEvent({
+        from: zeroAddress,
+        to: BUYER,
+        tokenId,
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+
+      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
+
+      const momentsId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      const transferId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const adminId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${event.chainId}_${tokenId}_${BUYER.toLowerCase()}`;
+
+      assert.equal(mockDbUpdated.entities.ZoraMedia_Moments.get(momentsId), undefined);
+      assert.equal(mockDbUpdated.entities.Transfers.get(transferId), undefined);
+      assert.equal(mockDbUpdated.entities.ZoraMedia_Admins.get(adminId), undefined);
+    });
+
     it("should register a ZoraMedia token on mint", async () => {
       const mockDb = MockDb.createMockDb();
       const tokenId = 1n;
@@ -190,6 +212,24 @@ describe("ZoraMedia Handler Tests", () => {
   });
 
   describe("ZoraMedia.TokenURIUpdated", () => {
+    it("should ignore TokenURIUpdated events for token id 0", async () => {
+      const tokenId = 0n;
+      const event = ZoraMedia.TokenURIUpdated.createMockEvent({
+        _tokenId: tokenId,
+        owner: OTHER_OWNER,
+        _uri: "https://example.com/token/0",
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+
+      const mockDbUpdated = await ZoraMedia.TokenURIUpdated.processEvent({
+        event,
+        mockDb: MockDb.createMockDb(),
+      });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      assert.equal(mockDbUpdated.entities.ZoraMedia_Moments.get(entityId), undefined);
+    });
+
     it("should enrich an existing ZoraMedia token with token URI", async () => {
       const tokenId = 1n;
       const transferEvent = ZoraMedia.Transfer.createMockEvent({
@@ -249,6 +289,24 @@ describe("ZoraMedia Handler Tests", () => {
   });
 
   describe("ZoraMedia.TokenMetadataURIUpdated", () => {
+    it("should ignore TokenMetadataURIUpdated events for token id 0", async () => {
+      const tokenId = 0n;
+      const event = ZoraMedia.TokenMetadataURIUpdated.createMockEvent({
+        _tokenId: tokenId,
+        owner: OTHER_OWNER,
+        _uri: "https://example.com/token/0/metadata",
+      });
+      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
+
+      const mockDbUpdated = await ZoraMedia.TokenMetadataURIUpdated.processEvent({
+        event,
+        mockDb: MockDb.createMockDb(),
+      });
+
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
+      assert.equal(mockDbUpdated.entities.ZoraMedia_Moments.get(entityId), undefined);
+    });
+
     it("should enrich an existing ZoraMedia token with metadata URI", async () => {
       const tokenId = 5n;
       const transferEvent = ZoraMedia.Transfer.createMockEvent({

@@ -1,41 +1,41 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: inprocess-indexers
 contracts:
-  # - name: InProcessCreatorFixedPriceSaleStrategy
-  #   handler: src/EventHandlers.ts
-  #   events:
-  #     - event: SaleSet (address indexed mediaContract, uint256 indexed tokenId, (uint64, uint64, uint64, uint96, address) salesConfig)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
+  - name: InProcessCreatorFixedPriceSaleStrategy
+    handler: src/EventHandlers.ts
+    events:
+      - event: SaleSet (address indexed mediaContract, uint256 indexed tokenId, (uint64, uint64, uint64, uint96, address) salesConfig)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)
+        field_selection:
+          transaction_fields:
+            - hash
 
-  # - name: InProcessERC20Minter
-  #   handler: src/EventHandlers.ts
-  #   events:
-  #     - event: MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: ERC20RewardsDeposit(address indexed createReferral, address indexed mintReferral, address indexed firstMinter, address zora, address collection, address currency, uint256 tokenId, uint256 createReferralReward, uint256 mintReferralReward, uint256 firstMinterReward, uint256 zoraReward)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: SaleSet (address indexed mediaContract, uint256 indexed tokenId, (uint64, uint64, uint64, uint256, address, address) salesConfig)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
+  - name: InProcessERC20Minter
+    handler: src/EventHandlers.ts
+    events:
+      - event: MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: ERC20RewardsDeposit(address indexed createReferral, address indexed mintReferral, address indexed firstMinter, address zora, address collection, address currency, uint256 tokenId, uint256 createReferralReward, uint256 mintReferralReward, uint256 firstMinterReward, uint256 zoraReward)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: SaleSet (address indexed mediaContract, uint256 indexed tokenId, (uint64, uint64, uint64, uint256, address, address) salesConfig)
+        field_selection:
+          transaction_fields:
+            - hash
 
-  # - name: InProcessCreatorFactory
-  #   handler: src/EventHandlers.ts
-  #   events:
-  #     - event: SetupNewContract(address indexed newContract, address indexed creator, address indexed defaultAdmin, string contractURI, string name, (uint32, uint32, address) defaultRoyaltyConfiguration)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
+  - name: InProcessCreatorFactory
+    handler: src/EventHandlers.ts
+    events:
+      - event: SetupNewContract(address indexed newContract, address indexed creator, address indexed defaultAdmin, string contractURI, string name, (uint32, uint32, address) defaultRoyaltyConfiguration)
+        field_selection:
+          transaction_fields:
+            - hash
 
   # - name: CatalogReleaseFactory
   #   handler: src/EventHandlers.ts
@@ -146,37 +146,146 @@ contracts:
   #     - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
   #     - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
 
-  # - name: InProcessMoment
-  #   handler: src/EventHandlers.ts
-  #   events:
-  #     - event: UpdatedPermissions(uint256 indexed tokenId, address indexed user, uint256 indexed permissions)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: ContractMetadataUpdated(address indexed updater, string uri, string name)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: SetupNewToken (uint256 indexed tokenId, address indexed sender, string newURI, uint256 maxSupply)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: URI (string value, uint256 indexed id)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: Purchased (address indexed sender, address indexed minter, uint256 indexed tokenId, uint256 quantity, uint256 value)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: TransferSingle (address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
-  #     - event: UpdatedRoyalties(uint256 indexed tokenId, address indexed user, (uint32, uint32, address) configuration)
-  #       field_selection:
-  #         transaction_fields:
-  #           - hash
+  - name: InProcessMoment
+    handler: src/EventHandlers.ts
+    events:
+      - event: UpdatedPermissions(uint256 indexed tokenId, address indexed user, uint256 indexed permissions)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: ContractMetadataUpdated(address indexed updater, string uri, string name)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: SetupNewToken (uint256 indexed tokenId, address indexed sender, string newURI, uint256 maxSupply)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: URI (string value, uint256 indexed id)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: Purchased (address indexed sender, address indexed minter, uint256 indexed tokenId, uint256 quantity, uint256 value)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TransferSingle (address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: UpdatedRoyalties(uint256 indexed tokenId, address indexed user, (uint32, uint32, address) configuration)
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: CatalogReleaseFactory
+    handler: src/EventHandlers.ts
+    events:
+      - event: CRContractCreated (address indexed _contractAddress, address indexed _creator)
+        field_selection:
+          transaction_fields:
+            - hash
+            - input
+
+  - name: USDCFixedPriceController
+    handler: src/EventHandlers.ts
+    events:
+      - event: MintConfigurationUpdated (address indexed releaseContract, uint256 indexed tokenId, (uint96, address) configuration)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: AlbumMintConfigurationUpdated (address indexed releaseContract, uint256 indexed albumId, (uint96, address, uint256[]) configuration)
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: CatalogRelease1155
+    handler: src/EventHandlers.ts
+    events:
+      - event: URI (string value, uint256 indexed id)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TokenCreated (uint256 indexed _tokenId, address _contract, address indexed _artist, string _uri, bytes32 indexed _contentHash)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: ContractPermissionsUpdated (address indexed user, uint256 authScope)
+      - event: TokenPermissionsUpdated (uint256 indexed tokenId, address indexed user, uint256 authScope)
+      - event: TokenPurchased (uint256 indexed tokenId, uint256 indexed amount, address indexed buyer, address referrer0, address referrer1)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: AlbumPurchased (uint256 indexed albumId, address indexed buyer, address referrer0, address referrer1)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TokenMinted (uint256 indexed tokenId, address indexed artist, uint256 amount)
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: SoundCreatorV2
+    handler: src/EventHandlers.ts
+    events:
+      - event: "Created(address indexed implementation, address indexed edition, address indexed owner, bytes initData, address[] contracts, bytes[] data, bytes[] results)"
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: SoundEditionV2_1
+    handler: src/EventHandlers.ts
+    events:
+      - event: "RolesUpdated(address indexed user, uint256 indexed roles)"
+      - event: "FundingRecipientSet(address recipient)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "RoyaltySet(uint16 bps)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "ContractURISet(string contractURI)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "BaseURISet(string baseURI)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "TierCreated((uint8,uint32,uint32,uint32,bool,bool) creation)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "Minted(uint8 tier, address to, uint256 quantity, uint256 fromTokenId)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "Airdropped(uint8 tier, address[] to, uint256 quantity, uint256 fromTokenId)"
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: SoundMetadata
+    handler: src/EventHandlers.ts
+    events:
+      - event: "BaseURISet(address indexed edition, uint8 tier, string uri)"
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: SuperMinterV2
+    handler: src/EventHandlers.ts
+    events:
+      # edition indexed only (tier is NOT indexed — verified on-chain)
+      - event: "MintCreated(address indexed edition, uint8 tier, uint8 scheduleNum, (address,uint96,uint32,uint32,uint32,uint32,uint16,bytes32,uint8,address,uint8,bytes32) creation)"
+        field_selection:
+          transaction_fields:
+            - hash
+      # edition IS indexed (verified on-chain)
+      - event: "PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)"
+      - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
+      - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
 
   - name: ZoraMedia
     handler: src/EventHandlers.ts
@@ -201,6 +310,44 @@ networks:
       - name: ZoraMedia
         address:
           - 0xabefbc9fd2f806065b4f3c237d4b59d9a97bcac7
+  - id: 8453
+    start_block: 7272930
+    contracts:
+      - name: InProcessERC20Minter
+        start_block: 27712746
+        address:
+          - 0xE27d9Dc88dAB82ACa3ebC49895c663C6a0CfA014
+      - name: InProcessCreatorFactory
+        start_block: 27712746
+        address:
+          - 0x540C18B7f99b3b599c6FeB99964498931c211858
+      - name: InProcessMoment
+        start_block: 27712746
+      - name: InProcessCreatorFixedPriceSaleStrategy
+        start_block: 27712746
+        address:
+          - 0x2994762aa0e4c750c51f333c10d81961faebe785
+      - name: CatalogReleaseFactory
+        start_block: 18357751
+        address:
+          - 0x94c2fab68ad0b7ca12e19d37b14ec662633d8025
+      - name: USDCFixedPriceController
+        start_block: 18357751
+        address:
+          - 0xbcEaBFcC30a0e050367A6A5FaEa247A43C314709
+      - name: CatalogRelease1155
+        start_block: 18357751
+      - name: SoundCreatorV2
+        address:
+          - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
+      - name: SoundEditionV2_1
+        start_block: 44239100
+      - name: SoundMetadata
+        address:
+          - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
+      - name: SuperMinterV2
+        address:
+          - "0x000000000001A36777f9930aAEFf623771b13e70"
   # - id: 84532
   #   start_block: 23208989
   #   contracts:
