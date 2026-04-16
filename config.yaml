@@ -183,7 +183,29 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+
+  - name: ZoraMedia
+    handler: src/EventHandlers.ts
+    events:
+      - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TokenURIUpdated(uint256 indexed _tokenId, address owner, string _uri)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TokenMetadataURIUpdated(uint256 indexed _tokenId, address owner, string _uri)
+        field_selection:
+          transaction_fields:
+            - hash
 networks:
+  - id: 1
+    start_block: 11565020
+    contracts:
+      - name: ZoraMedia
+        address:
+          - 0xabefbc9fd2f806065b4f3c237d4b59d9a97bcac7
   - id: 84532
     start_block: 23208989
     contracts:

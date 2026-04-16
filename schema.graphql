@@ -22,6 +22,28 @@ type InProcess_Moments {
   transaction_hash: String!
 }
 
+type ZoraMedia_Moments {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  owner: String!
+  uri: String
+  metadata_uri: String
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type ZoraMedia_Admins {
+  id: ID!
+  admin: String!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  updated_at: Int!
+}
+
 type InProcess_Admins {
   id: ID!
   admin: String!
