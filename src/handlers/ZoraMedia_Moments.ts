@@ -57,6 +57,7 @@ ZoraMedia.Transfer.handler(
   { eventFilters: [{ from: zeroAddress }] }
 );
 
+
 ZoraMedia.TokenURIUpdated.handler(
   async ({ event, context }: ZoraMedia_TokenURIUpdated_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
