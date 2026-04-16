@@ -5,6 +5,7 @@ import "./handlers/In_Process_Comments";
 import "./handlers/In_Process_Moments";
 import "./handlers/In_Process_Sales";
 import "./handlers/In_Process_Transfers";
+import "./handlers/ZoraMedia_Moments";
 import "./handlers/Catalog_Collections";
 import "./handlers/Catalog_Admins";
 import "./handlers/Catalog_Moments";
