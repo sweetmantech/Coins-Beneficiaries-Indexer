@@ -186,3 +186,17 @@ type ZoraMedia_Admins {
 #   updated_at: Int!
 #   transaction_hash: String!
 # }
+
+type Transfers {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  recipient: String!
+  quantity: BigInt!
+  value: BigInt
+  currency: String
+  transaction_hash: String!
+  block_number: BigInt!
+  transferred_at: Int!
+}
