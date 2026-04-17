@@ -16,21 +16,26 @@ ZoraMedia.Transfer.handler(async ({ event, context }: ZoraMedia_Transfer_handler
   const fromAddress = event.params.from.toLowerCase();
   const admin = event.params.to.toLowerCase();
 
-  if (fromAddress !== zeroAddress) {
-    context.Transfers.set({
+  if (tokenId === 0n) return;
+
+  if (fromAddress === zeroAddress) {
+    const txInput = (event.transaction as { input?: string }).input ?? "0x";
+    const decodedUris = getInitialUrisFromCalldata(txInput);
+
+    const entity: ZoraMedia_Moments = {
       id: `${collection}_${tokenId}_${event.chainId}`,
       collection,
       token_id: tokenId,
+      owner: admin,
+      uri: decodedUris?.tokenURI,
+      metadata_uri: decodedUris?.metadataURI,
       chain_id: event.chainId,
-      recipient: admin,
-      quantity: 1n,
-      value: undefined,
-      currency: undefined,
+      created_at: event.block.timestamp,
+      updated_at: event.block.timestamp,
       transaction_hash: event.transaction.hash,
-      block_number: BigInt(event.block.number),
-      transferred_at: event.block.timestamp,
-    } as Transfers);
-
+    };
+    context.ZoraMedia_Moments.set(entity);
+  } else {
     const fromAdminEntity: ZoraMedia_Admins = {
       id: `${collection}_${tokenId}_${event.chainId}_${fromAddress}`,
       admin: fromAddress,
@@ -40,38 +45,34 @@ ZoraMedia.Transfer.handler(async ({ event, context }: ZoraMedia_Transfer_handler
       permission: 0,
       updated_at: event.block.timestamp,
     };
-
-    const toAdminEntity: ZoraMedia_Admins = {
-      id: `${collection}_${tokenId}_${event.chainId}_${admin}`,
-      admin,
-      collection,
-      token_id: tokenId,
-      chain_id: event.chainId,
-      permission: 2,
-      updated_at: event.block.timestamp,
-    };
-
     context.ZoraMedia_Admins.set(fromAdminEntity);
-    context.ZoraMedia_Admins.set(toAdminEntity);
-    return;
   }
-  const txInput = (event.transaction as { input?: string }).input ?? "0x";
-  const decodedUris = getInitialUrisFromCalldata(txInput);
 
-  const entity: ZoraMedia_Moments = {
+  context.Transfers.set({
     id: `${collection}_${tokenId}_${event.chainId}`,
     collection,
     token_id: tokenId,
-    owner: admin,
-    uri: decodedUris?.tokenURI,
-    metadata_uri: decodedUris?.metadataURI,
     chain_id: event.chainId,
-    created_at: event.block.timestamp,
-    updated_at: event.block.timestamp,
+    recipient: admin,
+    quantity: 1n,
+    value: undefined,
+    currency: undefined,
     transaction_hash: event.transaction.hash,
+    block_number: BigInt(event.block.number),
+    transferred_at: event.block.timestamp,
+  } as Transfers);
+
+  const toAdminEntity: ZoraMedia_Admins = {
+    id: `${collection}_${tokenId}_${event.chainId}_${admin}`,
+    admin,
+    collection,
+    token_id: tokenId,
+    chain_id: event.chainId,
+    permission: 2,
+    updated_at: event.block.timestamp,
   };
 
-  context.ZoraMedia_Moments.set(entity);
+  context.ZoraMedia_Admins.set(toAdminEntity);
 });
 
 ZoraMedia.TokenURIUpdated.handler(
