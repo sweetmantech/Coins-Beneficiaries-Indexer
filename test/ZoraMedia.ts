@@ -317,7 +317,7 @@ describe("ZoraMedia Handler Tests", () => {
 
       const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
 
-      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
       const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
       const expectedEntity: Transfers = {
@@ -350,7 +350,7 @@ describe("ZoraMedia Handler Tests", () => {
 
       const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
 
-      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${event.chainId}_${tokenId}_${BUYER.toLowerCase()}`;
+      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${BUYER.toLowerCase()}`;
       const actualEntity = mockDbUpdated.entities.ZoraMedia_Admins.get(entityId);
 
       const expectedEntity: ZoraMedia_Admins = {
