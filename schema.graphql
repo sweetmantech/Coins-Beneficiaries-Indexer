@@ -1,16 +1,25 @@
-type Transfers {
+type InProcess_Collections {
+  id: ID!
+  address: String!
+  name: String!
+  uri: String!
+  default_admin: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type InProcess_Moments {
   id: ID!
   collection: String!
   token_id: BigInt!
+  uri: String!
+  max_supply: BigInt!
   chain_id: Int!
-  recipient: String!
-  quantity: BigInt!
-  # InProcess only - null for Catalog/Sound.xyz
-  value: BigInt
-  currency: String
+  created_at: Int!
+  updated_at: Int!
   transaction_hash: String!
-  block_number: BigInt!
-  transferred_at: Int!
 }
 
 type ZoraMedia_Moments {
@@ -34,4 +43,147 @@ type ZoraMedia_Admins {
   chain_id: Int!
   permission: Int!
   updated_at: Int!
+}
+
+type InProcess_Admins {
+  id: ID!
+  admin: String!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  permission: Int!
+  updated_at: Int!
+}
+
+type InProcess_Comments {
+  id: ID!
+  collection: String!
+  sender: String!
+  token_id: BigInt!
+  comment: String
+  chain_id: Int!
+  commented_at: Int!
+  transaction_hash: String!
+}
+
+type Catalog_Moments {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  artist: String!
+  uri: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Catalog_Collections {
+  id: ID!
+  address: String!
+  name: String!
+  creator: String!
+  uri: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Catalog_Albums {
+  id: ID! # ${releaseContract}_${albumId}_${chainId}
+  collection: String!
+  album_id: BigInt!
+  token_ids: String! # JSON array: "[1,2,3]"
+  funds_recipient: String!
+  album_price: BigInt!
+  chain_id: Int!
+}
+
+type Catalog_Admins {
+  id: ID!
+  admin: String!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  auth_scope: Int!
+  updated_at: Int!
+}
+
+type Sound_Editions {
+  id: ID!
+  address: String!
+  name: String!
+  owner: String!
+  uri: String!
+  base_uri: String!
+  funding_recipient: String!
+  royalty_bps: Int!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Sound_Moments {
+  id: ID!
+  collection: String! @index
+  tier: Int!
+  uri: String!
+  uri_from_metadata: Boolean!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Sound_Admins {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  admin: String!
+  roles: Int!
+  chain_id: Int!
+  updated_at: Int!
+}
+
+type Primary_Sales {
+  id: ID!
+  collection: String! @index
+  token_id: BigInt!
+  price_per_token: BigInt!
+  funds_recipient: String!
+  currency: String!
+  sale_start: BigInt
+  sale_end: BigInt
+  max_tokens_per_address: BigInt
+  chain_id: Int!
+  transaction_hash: String!
+  created_at: Int!
+}
+
+type Transfers {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  recipient: String!
+  quantity: BigInt!
+  # InProcess only - null for Catalog/Sound.xyz
+  value: BigInt
+  currency: String
+  transaction_hash: String!
+  block_number: BigInt!
+  transferred_at: Int!
+}
+
+type Secondary_Sales {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  royalty_recipient: String!
+  royalty_bps: Int!
+  chain_id: Int!
+  updated_at: Int!
+  transaction_hash: String!
 }
