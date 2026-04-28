@@ -7,6 +7,7 @@ import {
 } from "generated";
 import { zeroAddress } from "viem";
 import transferId from "@/lib/in_process_transfers/transferId";
+import { getPreviousTransfers } from "@/lib/in_process_transfers/getPreviousTransfers";
 
 // Step 1 — ERC1155 mint: captures recipient + quantity, detects airdrop via operator
 InProcessMoment.TransferSingle.handler(
@@ -14,7 +15,13 @@ InProcessMoment.TransferSingle.handler(
     const collection = event.srcAddress.toLowerCase();
 
     context.Transfers.set({
-      id: transferId(collection, event.params.id.toString(), event.chainId, event.transaction.hash),
+      id: transferId(
+        collection,
+        event.params.id.toString(),
+        event.chainId,
+        event.transaction.hash,
+        Number(event.logIndex)
+      ),
       collection,
       token_id: event.params.id,
       chain_id: event.chainId,
@@ -30,47 +37,53 @@ InProcessMoment.TransferSingle.handler(
   { eventFilters: [{ from: zeroAddress }] }
 );
 
-// Step 2a — ETH mint: updates Transfer with value + currency
+// ETH paid mint: Purchased lacks mint logIndex — same-tx rows via indexed `transaction_hash`, then pick preceding mint.
 InProcessMoment.Purchased.handler(
   async ({ event, context }: InProcessMoment_Purchased_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
-    const id = transferId(
-      collection,
-      event.params.tokenId.toString(),
-      event.chainId,
-      event.transaction.hash
+    const transfers = await context.Transfers.getWhere.transaction_hash.eq(event.transaction.hash);
+    const scoped = transfers.filter(
+      (transfer) =>
+        transfer.collection === collection &&
+        transfer.token_id === event.params.tokenId &&
+        transfer.chain_id === event.chainId
     );
-    const transfer = await context.Transfers.get(id);
-    if (!transfer) return;
+    const previous = getPreviousTransfers(scoped, Number(event.logIndex));
+    const t = previous[0];
+    if (!t) return;
 
     context.Transfers.set({
-      ...transfer,
+      ...t,
       value: event.params.value,
       currency: zeroAddress,
     });
   }
 );
 
-// Step 2b — ERC20 mint: updates Transfer with value + currency from Primary_Sales
+/** ERC20 path: Deposit event has no mint log — same-tx `transaction_hash` query, then mint row before this deposit log. */
 InProcessERC20Minter.ERC20RewardsDeposit.handler(
   async ({ event, context }: InProcessERC20Minter_ERC20RewardsDeposit_handlerArgs) => {
     const collection = event.params.collection.toLowerCase();
-    const id = transferId(
-      collection,
-      event.params.tokenId.toString(),
-      event.chainId,
-      event.transaction.hash
-    );
-    const transfer = await context.Transfers.get(id);
-    if (!transfer) return;
+    const tokenIdStr = event.params.tokenId.toString();
 
-    const saleId = `${collection}_${event.params.tokenId.toString()}_${event.chainId}`;
+    const transfers = await context.Transfers.getWhere.transaction_hash.eq(event.transaction.hash);
+    const scoped = transfers.filter(
+      (transfer) =>
+        transfer.collection === collection &&
+        transfer.token_id === event.params.tokenId &&
+        transfer.chain_id === event.chainId
+    );
+    const previous = getPreviousTransfers(scoped, Number(event.logIndex));
+    const t = previous[0];
+    if (!t) return;
+
+    const saleId = `${collection}_${tokenIdStr}_${event.chainId}`;
     const sale = await context.Primary_Sales.get(saleId);
     if (!sale) return;
 
     context.Transfers.set({
-      ...transfer,
-      value: sale.price_per_token * transfer.quantity,
+      ...t,
+      value: sale.price_per_token * t.quantity,
       currency: sale.currency,
     });
   }

@@ -172,7 +172,7 @@ type Transfers {
   # InProcess only - null for Catalog/Sound.xyz
   value: BigInt
   currency: String
-  transaction_hash: String!
+  transaction_hash: String! @index
   block_number: BigInt!
   transferred_at: Int!
 }

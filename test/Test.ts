@@ -139,7 +139,7 @@ describe("Event Handler Tests", () => {
   // ─── Transfers ───────────────────────────────────────────────────────────
 
   describe("InProcessMoment.TransferSingle (airdrop/mint)", () => {
-    it("should create Transfers entity with undefined payer for admin mints", async () => {
+    it("should create Transfers entity with undefined value/currency for admin mints", async () => {
       const tokenId = 1n;
       const quantity = 3n;
       const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
@@ -158,7 +158,8 @@ describe("Event Handler Tests", () => {
       const mockDb = MockDb.createMockDb();
       const mockDbUpdated = await InProcessMoment.TransferSingle.processEvent({ event, mockDb });
 
-      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${txHash}`;
+      const mintLogIndex = Number((event as { logIndex?: number }).logIndex ?? 0);
+      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${txHash}_${mintLogIndex}`;
       const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
       const expectedEntity: Transfers = {
@@ -180,7 +181,7 @@ describe("Event Handler Tests", () => {
   });
 
   describe("InProcessMoment.Purchased (ETH mint)", () => {
-    it("should update Transfers with payer/value/funds_recipient from Primary_Sales", async () => {
+    it("should enrich same-tx mint row with value ETH from Purchased (mint picked by logIndex before Purchased)", async () => {
       const tokenId = 1n;
       const value = 1000000000000000n; // 0.001 ETH
       const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
@@ -192,9 +193,12 @@ describe("Event Handler Tests", () => {
         to: BUYER,
         id: tokenId,
         value: 1n,
-      });
-      (transferEvent as { srcAddress: string }).srcAddress = COLLECTION;
-      (transferEvent.transaction as { hash: string }).hash = txHash;
+        mockEventData: {
+          logIndex: 10,
+          srcAddress: COLLECTION,
+          transaction: { hash: txHash },
+        },
+      } as Parameters<typeof InProcessMoment.TransferSingle.createMockEvent>[0]);
 
       const purchasedEvent = InProcessMoment.Purchased.createMockEvent({
         sender: BUYER,
@@ -202,34 +206,22 @@ describe("Event Handler Tests", () => {
         tokenId,
         quantity: 1n,
         value,
-      });
-      (purchasedEvent as { srcAddress: string }).srcAddress = COLLECTION;
-      (purchasedEvent.transaction as { hash: string }).hash = txHash;
+        mockEventData: {
+          logIndex: 20,
+          srcAddress: COLLECTION,
+          transaction: { hash: txHash },
+        },
+      } as Parameters<typeof InProcessMoment.Purchased.createMockEvent>[0]);
 
-      const saleId = `${collection}_${tokenId}_${transferEvent.chainId}`;
-      const sale: Primary_Sales = {
-        id: saleId,
-        collection,
-        token_id: tokenId,
-        price_per_token: value,
-        funds_recipient: FUNDS_RECIPIENT.toLowerCase(),
-        currency: zeroAddress,
-        sale_start: undefined,
-        sale_end: undefined,
-        max_tokens_per_address: undefined,
-        chain_id: transferEvent.chainId,
-        transaction_hash: txHash,
-        created_at: 0,
-      };
-
-      let mockDb = MockDb.createMockDb().entities.Primary_Sales.set(sale);
+      let mockDb = MockDb.createMockDb();
       mockDb = await InProcessMoment.TransferSingle.processEvent({ event: transferEvent, mockDb });
       const mockDbUpdated = await InProcessMoment.Purchased.processEvent({
         event: purchasedEvent,
         mockDb,
       });
 
-      const entityId = `${collection}_${tokenId}_${transferEvent.chainId}_${txHash}`;
+      const mintLogIndex = Number((transferEvent as { logIndex?: number }).logIndex ?? 0);
+      const entityId = `${collection}_${tokenId}_${transferEvent.chainId}_${txHash}_${mintLogIndex}`;
       const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
       assert.ok(actualEntity, "Transfers entity should exist");
@@ -350,7 +342,7 @@ describe("Event Handler Tests", () => {
   });
 
   describe("InProcessERC20Minter.ERC20RewardsDeposit (ERC20 mint)", () => {
-    it("should update Transfers with payer/value/currency/funds_recipient from Primary_Sales", async () => {
+    it("should enrich same-tx mint row with value and currency from Primary_Sales (mint before deposit by logIndex)", async () => {
       const tokenId = 2n;
       const currency = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"; // USDC
       const pricePerToken = 5000000n; // 5 USDC
@@ -364,16 +356,23 @@ describe("Event Handler Tests", () => {
         to: BUYER,
         id: tokenId,
         value: quantity,
-      });
-      (transferEvent as { srcAddress: string }).srcAddress = COLLECTION;
-      (transferEvent.transaction as { hash: string }).hash = txHash;
+        mockEventData: {
+          logIndex: 5,
+          srcAddress: COLLECTION,
+          transaction: { hash: txHash },
+        },
+      } as Parameters<typeof InProcessMoment.TransferSingle.createMockEvent>[0]);
 
       const depositEvent = InProcessERC20Minter.ERC20RewardsDeposit.createMockEvent({
+        firstMinter: BUYER,
         collection: COLLECTION,
         currency,
         tokenId,
-      });
-      (depositEvent.transaction as { hash: string }).hash = txHash;
+        mockEventData: {
+          logIndex: 15,
+          transaction: { hash: txHash },
+        },
+      } as Parameters<typeof InProcessERC20Minter.ERC20RewardsDeposit.createMockEvent>[0]);
 
       const saleId = `${collection}_${tokenId}_${transferEvent.chainId}`;
       const sale: Primary_Sales = {
@@ -398,7 +397,8 @@ describe("Event Handler Tests", () => {
         mockDb,
       });
 
-      const entityId = `${collection}_${tokenId}_${transferEvent.chainId}_${txHash}`;
+      const mintLogIndex = Number((transferEvent as { logIndex?: number }).logIndex ?? 0);
+      const entityId = `${collection}_${tokenId}_${transferEvent.chainId}_${txHash}_${mintLogIndex}`;
       const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
 
       assert.ok(actualEntity, "Transfers entity should exist");
