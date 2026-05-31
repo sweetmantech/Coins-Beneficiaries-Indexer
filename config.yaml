@@ -201,6 +201,20 @@ networks:
       - name: ZoraMedia
         address:
           - 0xabefbc9fd2f806065b4f3c237d4b59d9a97bcac7
+      - name: InProcessCreatorFixedPriceSaleStrategy
+        start_block: 25216322
+        address:
+          - 0xe0d3febE1c17DDA1086e89B638Ab54955FE2eF8a
+      - name: InProcessERC20Minter
+        start_block: 25216322
+        address:
+          - 0x0676b307D53EA7ED80b20643E1Ac57A78Ce12f87
+      - name: InProcessCreatorFactory
+        start_block: 25216322
+        address:
+          - 0x2bf5EBEEb028D5F9E02F0F432Ebb1a192F5528F1
+      - name: InProcessMoment
+        start_block: 25216322
   - id: 8453
     start_block: 7272930
     contracts:
