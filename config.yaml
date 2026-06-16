@@ -281,5 +281,20 @@ networks:
       - name: InProcessCreatorFixedPriceSaleStrategy
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
+
+  - id: 10
+    start_block: 109963104
+    contracts:
+      - name: SoundCreatorV2
+        address:
+          - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
+      - name: SoundEditionV2_1
+      - name: SoundMetadata
+        address:
+          - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
+      - name: SuperMinterV2
+        start_block: 113629335
+        address:
+          - "0x000000000001A36777f9930aAEFf623771b13e70"
 unordered_multichain_mode: true
 preload_handlers: true
