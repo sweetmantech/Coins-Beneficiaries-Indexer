@@ -216,17 +216,17 @@ networks:
       - name: InProcessMoment
         start_block: 25216322
       - name: SoundCreatorV2
-        start_block: 19464881
+        start_block: 18202906
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
-        start_block: 19464881
+        start_block: 18202906
       - name: SoundMetadata
         start_block: 18207059
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
       - name: SuperMinterV2
-        start_block: 19464881
+        start_block: 18809180
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
   - id: 8453
