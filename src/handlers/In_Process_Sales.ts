@@ -4,7 +4,7 @@ import {
   type InProcessERC20Minter_SaleSet_handlerArgs,
   type InProcessCreatorFixedPriceSaleStrategy_SaleSet_handlerArgs,
 } from "generated";
-import { buildSale } from "@/lib/in_process_sales/buildSale";
+import { buildSale } from "@/lib/zora_protocol/buildSale";
 
 InProcessERC20Minter.SaleSet.handler(
   async ({ event, context }: InProcessERC20Minter_SaleSet_handlerArgs) => {
