@@ -220,13 +220,13 @@ networks:
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
-        start_block: 18202906
+        start_block: 25319173
       - name: SoundMetadata
-        start_block: 18207059
+        start_block: 25319173
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
       - name: SuperMinterV2
-        start_block: 18809180
+        start_block: 25319173
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
   - id: 8453
@@ -260,11 +260,13 @@ networks:
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
-        start_block: 44239100
+        start_block: 47346127
       - name: SoundMetadata
+        start_block: 47346127
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
       - name: SuperMinterV2
+        start_block: 47346127
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
 
@@ -289,11 +291,13 @@ networks:
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
+        start_block: 152941412
       - name: SoundMetadata
+        start_block: 152941412
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
       - name: SuperMinterV2
-        start_block: 113629335
+        start_block: 152941412
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
 unordered_multichain_mode: true
