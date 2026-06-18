@@ -9,8 +9,6 @@ export const FACTORY_ADDRESSES = [
   "0x6832a997d8616707c7b68721d6e9332e77da7f6c",
   "0x540c18b7f99b3b599c6feb99964498931c211858",
   "0x2bf5ebeeb028d5f9e02f0f432ebb1a192f5528f1",
-  // Zora CreatorFactory — same address across all chains (deterministic deployment)
-  "0x777777c338d93e2c7adf08d102d45ca7cc4ed021",
 ];
 
 export const USDC_ADDRESSES: Record<number, string> = {

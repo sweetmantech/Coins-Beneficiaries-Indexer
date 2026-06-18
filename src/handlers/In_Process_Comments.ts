@@ -4,7 +4,7 @@ import {
   type InProcessERC20Minter_MintComment_handlerArgs,
   type InProcessCreatorFixedPriceSaleStrategy_MintComment_handlerArgs,
 } from "generated";
-import { buildComment } from "@/lib/zora_protocol/buildComment";
+import buildComment from "@/lib/in_process_comments/buildComment";
 
 InProcessERC20Minter.MintComment.handler(
   async ({ event, context }: InProcessERC20Minter_MintComment_handlerArgs) => {
