@@ -5,7 +5,6 @@ import type {
   Catalog_Albums,
   Catalog_Collections,
   Catalog_Moments,
-  Primary_Sales,
   Transfers,
 } from "generated";
 import { encodeFunctionData, maxUint256, zeroAddress } from "viem";
@@ -442,59 +441,16 @@ describe("Catalog Event Handler Tests", () => {
     });
   });
 
-  describe("USDCFixedPriceController.MintConfigurationUpdated", () => {
-    it("should create Catalog_Sales entity correctly", async () => {
-      const mockDb = MockDb.createMockDb();
-      const tokenId = 1n;
-      const pricePerToken = 5_000_000n; // 5 USDC
-      const fundsRecipient = "0x9999999999999999999999999999999999999999";
-
-      const event = USDCFixedPriceController.MintConfigurationUpdated.createMockEvent({
-        releaseContract: COLLECTION,
-        tokenId,
-        configuration: [pricePerToken, fundsRecipient],
-      });
-
-      const mockDbUpdated = await USDCFixedPriceController.MintConfigurationUpdated.processEvent({
-        event,
-        mockDb,
-      });
-
-      const collection = COLLECTION.toLowerCase();
-      const entityId = `${collection}_${tokenId}_${event.chainId}`;
-      const actualEntity = await mockDbUpdated.entities.Primary_Sales.get(entityId);
-
-      const expectedEntity: Primary_Sales = {
-        id: entityId,
-        collection,
-        token_id: tokenId,
-        price_per_token: pricePerToken,
-        funds_recipient: fundsRecipient.toLowerCase(),
-        currency: USDC_ADDRESSES[event.chainId],
-        sale_start: BigInt(0),
-        sale_end: maxUint256,
-        max_tokens_per_address: maxUint256,
-        chain_id: event.chainId,
-        created_at: event.block.timestamp,
-        transaction_hash: event.transaction.hash,
-      };
-
-      assert.deepEqual(actualEntity, expectedEntity);
-    });
-  });
-
   describe("USDCFixedPriceController.AlbumMintConfigurationUpdated", () => {
-    it("should create Catalog_Albums entity with tokenIds, fundsRecipient, albumPrice", async () => {
+    it("should create Catalog_Albums entity with tokenIds", async () => {
       const mockDb = MockDb.createMockDb();
       const albumId = 1n;
-      const albumPrice = 10_000_000n; // 10 USDC
-      const fundsRecipient = "0x9999999999999999999999999999999999999999";
       const tokenIds = [1n, 2n, 3n];
 
       const event = USDCFixedPriceController.AlbumMintConfigurationUpdated.createMockEvent({
         releaseContract: COLLECTION,
         albumId,
-        configuration: [albumPrice, fundsRecipient, tokenIds],
+        configuration: [10_000_000n, "0x9999999999999999999999999999999999999999", tokenIds],
       });
 
       const mockDbUpdated =
@@ -512,8 +468,6 @@ describe("Catalog Event Handler Tests", () => {
         collection,
         album_id: albumId,
         token_ids: JSON.stringify(tokenIds.map((id) => id.toString())),
-        funds_recipient: fundsRecipient.toLowerCase(),
-        album_price: albumPrice,
         chain_id: event.chainId,
       };
 
@@ -535,8 +489,6 @@ describe("Catalog Event Handler Tests", () => {
         collection,
         album_id: albumId,
         token_ids: JSON.stringify(["1", "2", "3"]),
-        funds_recipient: CREATOR.toLowerCase(),
-        album_price: 10_000_000n,
         chain_id: event.chainId,
       });
 
@@ -549,7 +501,6 @@ describe("Catalog Event Handler Tests", () => {
       const entityId = `${collection}_${albumId}_${event.chainId}`;
       const actualEntity = mockDbUpdated.entities.Catalog_Albums.get(entityId);
 
-      assert.equal(actualEntity?.album_price, 20_000_000n, "album_price should be updated");
       assert.equal(
         actualEntity?.token_ids,
         JSON.stringify(["4", "5"]),
@@ -572,8 +523,6 @@ describe("Catalog Event Handler Tests", () => {
         collection,
         album_id: albumId,
         token_ids: JSON.stringify(tokenIds.map((id) => id.toString())),
-        funds_recipient: fundsRecipient.toLowerCase(),
-        album_price: albumPrice,
         chain_id: chainId,
       });
     };

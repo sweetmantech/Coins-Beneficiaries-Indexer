@@ -95,8 +95,6 @@ type Catalog_Albums {
   collection: String!
   album_id: BigInt!
   token_ids: String! # JSON array: "[1,2,3]"
-  funds_recipient: String!
-  album_price: BigInt!
   chain_id: Int!
 }
 
