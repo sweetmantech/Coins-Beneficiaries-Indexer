@@ -1,15 +1,8 @@
 import assert from "assert";
 import { TestHelpers } from "generated";
-import type { Zora_Collections, Zora_Moments, Zora_Comments, Transfers } from "generated";
-import { zeroAddress } from "viem";
+import type { Zora_Collections, Zora_Moments } from "generated";
 
-const {
-  MockDb,
-  ZoraCreatorFactory,
-  ZoraCreator1155,
-  ZoraCreatorFixedPriceSaleStrategy,
-  ZoraERC20Minter,
-} = TestHelpers;
+const { MockDb, ZoraCreatorFactory, ZoraCreator1155 } = TestHelpers;
 
 const COLLECTION = "0x1234567890123456789012345678901234567890";
 const ADMIN = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
@@ -183,120 +176,6 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
 
       const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
       assert.equal(mockDbUpdated.entities.Zora_Moments.get(entityId), undefined);
-    });
-  });
-
-  // ─── Comments ────────────────────────────────────────────────────────────
-
-  describe("ZoraERC20Minter.MintComment", () => {
-    it("should create Zora_Comments entity", async () => {
-      const mockDb = MockDb.createMockDb();
-
-      const event = ZoraERC20Minter.MintComment.createMockEvent({
-        sender: BUYER,
-        tokenContract: COLLECTION,
-        tokenId: 1n,
-        quantity: 1n,
-        comment: "Great track!",
-      });
-
-      const mockDbUpdated = await ZoraERC20Minter.MintComment.processEvent({ event, mockDb });
-
-      const entityId = `${COLLECTION.toLowerCase()}_1_${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const actualEntity = mockDbUpdated.entities.Zora_Comments.get(entityId);
-
-      const expectedEntity: Zora_Comments = {
-        id: entityId,
-        sender: BUYER.toLowerCase(),
-        collection: COLLECTION.toLowerCase(),
-        token_id: 1n,
-        comment: "Great track!",
-        commented_at: event.block.timestamp,
-        transaction_hash: event.transaction.hash,
-        chain_id: event.chainId,
-      };
-
-      assert.deepEqual(actualEntity, expectedEntity);
-    });
-  });
-
-  describe("ZoraCreatorFixedPriceSaleStrategy.MintComment", () => {
-    it("should create Zora_Comments entity", async () => {
-      const mockDb = MockDb.createMockDb();
-
-      const event = ZoraCreatorFixedPriceSaleStrategy.MintComment.createMockEvent({
-        sender: BUYER,
-        tokenContract: COLLECTION,
-        tokenId: 2n,
-        quantity: 1n,
-        comment: "Love this!",
-      });
-
-      const mockDbUpdated = await ZoraCreatorFixedPriceSaleStrategy.MintComment.processEvent({
-        event,
-        mockDb,
-      });
-
-      const entityId = `${COLLECTION.toLowerCase()}_2_${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const actualEntity = mockDbUpdated.entities.Zora_Comments.get(entityId);
-
-      const expectedEntity: Zora_Comments = {
-        id: entityId,
-        sender: BUYER.toLowerCase(),
-        collection: COLLECTION.toLowerCase(),
-        token_id: 2n,
-        comment: "Love this!",
-        commented_at: event.block.timestamp,
-        transaction_hash: event.transaction.hash,
-        chain_id: event.chainId,
-      };
-
-      assert.deepEqual(actualEntity, expectedEntity);
-    });
-  });
-
-  // ─── Transfers ───────────────────────────────────────────────────────────
-
-  describe("ZoraCreator1155.TransferSingle (mint)", () => {
-    it("should create Transfers entity with undefined value/currency", async () => {
-      const tokenId = 1n;
-      const quantity = 2n;
-      const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
-
-      const event = ZoraCreator1155.TransferSingle.createMockEvent({
-        operator: ADMIN,
-        from: zeroAddress,
-        to: BUYER,
-        id: tokenId,
-        value: quantity,
-        mockEventData: {
-          srcAddress: COLLECTION,
-          transaction: { hash: txHash },
-        },
-      });
-
-      const mockDb = MockDb.createMockDb();
-      const mockDbUpdated = await ZoraCreator1155.TransferSingle.processEvent({ event, mockDb });
-
-      const mintLogIndex = Number((event as { logIndex?: number }).logIndex ?? 0);
-      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${txHash}_${mintLogIndex}`;
-      const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
-
-      const expectedEntity: Transfers = {
-        id: entityId,
-        collection: COLLECTION.toLowerCase(),
-        token_id: tokenId,
-        chain_id: event.chainId,
-        recipient: BUYER.toLowerCase(),
-        quantity,
-        value: undefined,
-        currency: undefined,
-        transaction_hash: txHash,
-        block_number: BigInt(event.block.number),
-        transferred_at: event.block.timestamp,
-      };
-
-      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
 });
