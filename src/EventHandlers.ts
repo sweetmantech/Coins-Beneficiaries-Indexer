@@ -16,3 +16,5 @@ import "./handlers/Sound_Admins";
 import "./handlers/Sound_Moments";
 import "./handlers/Sound_Sales";
 import "./handlers/Sound_Transfers";
+import "./handlers/Zora_Collections";
+import "./handlers/Zora_Moments";

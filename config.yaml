@@ -194,6 +194,30 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+
+  - name: ZoraCreatorFactory
+    handler: src/EventHandlers.ts
+    events:
+      - event: SetupNewContract(address indexed newContract, address indexed creator, address indexed defaultAdmin, string contractURI, string name, (uint32, uint32, address) defaultRoyaltyConfiguration)
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: ZoraCreator1155
+    handler: src/EventHandlers.ts
+    events:
+      - event: ContractMetadataUpdated(address indexed updater, string uri, string name)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: SetupNewToken (uint256 indexed tokenId, address indexed sender, string newURI, uint256 maxSupply)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: URI (string value, uint256 indexed id)
+        field_selection:
+          transaction_fields:
+            - hash
 networks:
   - id: 1
     start_block: 11565020
@@ -230,7 +254,7 @@ networks:
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
   - id: 8453
-    start_block: 7272930
+    start_block: 4783000
     contracts:
       - name: InProcessERC20Minter
         start_block: 27712746
@@ -257,6 +281,7 @@ networks:
       - name: CatalogRelease1155
         start_block: 18357751
       - name: SoundCreatorV2
+        start_block: 7272930
         address:
           - "0x0000000000aec84F5BFc2af15EAfb943bf4e3522"
       - name: SoundEditionV2_1
@@ -269,6 +294,13 @@ networks:
         start_block: 47346127
         address:
           - "0x000000000001A36777f9930aAEFf623771b13e70"
+      # ZoraCreatorFactory deployed at block 4,784,084 (2023-10-03)
+      - name: ZoraCreatorFactory
+        start_block: 4784084
+        address:
+          - "0x777777C338d93e2C7adf08D102d45CA7CC4Ed021"
+      - name: ZoraCreator1155
+        start_block: 4784084
 
   - id: 84532
     start_block: 23208989

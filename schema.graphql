@@ -187,3 +187,27 @@ type Secondary_Sales {
   updated_at: Int!
   transaction_hash: String!
 }
+
+type Zora_Collections {
+  id: ID!
+  address: String!
+  name: String!
+  uri: String!
+  default_admin: String!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
+
+type Zora_Moments {
+  id: ID!
+  collection: String!
+  token_id: BigInt!
+  uri: String!
+  max_supply: BigInt!
+  chain_id: Int!
+  created_at: Int!
+  updated_at: Int!
+  transaction_hash: String!
+}
