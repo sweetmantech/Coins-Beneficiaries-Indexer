@@ -2,7 +2,11 @@ import assert from "assert";
 import { TestHelpers } from "generated";
 import type { Zora_Collections, Zora_Moments } from "generated";
 
-const { MockDb, ZoraCreatorFactory, ZoraCreator1155 } = TestHelpers;
+const {
+  MockDb,
+  ZoraCreatorFactory,
+  ZoraCreator1155,
+} = TestHelpers;
 
 const COLLECTION = "0x1234567890123456789012345678901234567890";
 const ADMIN = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
@@ -178,4 +182,5 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
       assert.equal(mockDbUpdated.entities.Zora_Moments.get(entityId), undefined);
     });
   });
+
 });
