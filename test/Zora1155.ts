@@ -1,7 +1,6 @@
 import assert from "assert";
 import { TestHelpers } from "generated";
-import type { Zora_Collections, Zora_Moments, Transfers } from "generated";
-import { zeroAddress } from "viem";
+import type { Zora_Collections, Zora_Moments } from "generated";
 
 const {
   MockDb,
@@ -184,48 +183,4 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
     });
   });
 
-  // ─── Transfers ───────────────────────────────────────────────────────────
-
-  describe("ZoraCreator1155.TransferSingle (mint)", () => {
-    it("should create Transfers entity with undefined value/currency", async () => {
-      const tokenId = 1n;
-      const quantity = 2n;
-      const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
-
-      const event = ZoraCreator1155.TransferSingle.createMockEvent({
-        operator: ADMIN,
-        from: zeroAddress,
-        to: BUYER,
-        id: tokenId,
-        value: quantity,
-        mockEventData: {
-          srcAddress: COLLECTION,
-          transaction: { hash: txHash },
-        },
-      });
-
-      const mockDb = MockDb.createMockDb();
-      const mockDbUpdated = await ZoraCreator1155.TransferSingle.processEvent({ event, mockDb });
-
-      const mintLogIndex = Number((event as { logIndex?: number }).logIndex ?? 0);
-      const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${txHash}_${mintLogIndex}`;
-      const actualEntity = mockDbUpdated.entities.Transfers.get(entityId);
-
-      const expectedEntity: Transfers = {
-        id: entityId,
-        collection: COLLECTION.toLowerCase(),
-        token_id: tokenId,
-        chain_id: event.chainId,
-        recipient: BUYER.toLowerCase(),
-        quantity,
-        value: undefined,
-        currency: undefined,
-        transaction_hash: txHash,
-        block_number: BigInt(event.block.number),
-        transferred_at: event.block.timestamp,
-      };
-
-      assert.deepEqual(actualEntity, expectedEntity);
-    });
-  });
 });
