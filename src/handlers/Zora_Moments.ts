@@ -12,13 +12,18 @@ ZoraCreator1155.SetupNewToken.handler(
 );
 
 ZoraCreator1155.URI.handler(async ({ event, context }: ZoraCreator1155_URI_handlerArgs) => {
-  const existing = await context.Zora_Moments.get(
-    `${event.srcAddress.toLowerCase()}_${event.params.id}_${event.chainId}`
-  );
-  if (!existing) return;
+  const id = `${event.srcAddress.toLowerCase()}_${event.params.id}_${event.chainId}`;
+  const existing = await context.Zora_Moments.get(id);
+
   context.Zora_Moments.set({
-    ...existing,
-    updated_at: event.block.timestamp,
+    id,
+    collection: event.srcAddress.toLowerCase(),
+    token_id: event.params.id,
+    chain_id: event.chainId,
+    transaction_hash: event.transaction.hash,
+    created_at: existing?.created_at,
+    max_supply: existing?.max_supply,
     uri: event.params.value,
+    updated_at: event.block.timestamp,
   });
 });

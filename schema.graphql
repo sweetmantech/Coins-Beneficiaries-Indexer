@@ -203,9 +203,9 @@ type Zora_Moments {
   collection: String!
   token_id: BigInt!
   uri: String!
-  max_supply: BigInt!
+  max_supply: BigInt
   chain_id: Int!
-  created_at: Int!
+  created_at: Int
   updated_at: Int!
   transaction_hash: String!
 }
