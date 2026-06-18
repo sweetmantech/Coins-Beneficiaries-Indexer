@@ -81,10 +81,6 @@ contracts:
   - name: USDCFixedPriceController
     handler: src/EventHandlers.ts
     events:
-      - event: MintConfigurationUpdated (address indexed releaseContract, uint256 indexed tokenId, (uint96, address) configuration)
-        field_selection:
-          transaction_fields:
-            - hash
       - event: AlbumMintConfigurationUpdated (address indexed releaseContract, uint256 indexed albumId, (uint96, address, uint256[]) configuration)
         field_selection:
           transaction_fields:
@@ -128,14 +124,6 @@ contracts:
     handler: src/EventHandlers.ts
     events:
       - event: "RolesUpdated(address indexed user, uint256 indexed roles)"
-      - event: "FundingRecipientSet(address recipient)"
-        field_selection:
-          transaction_fields:
-            - hash
-      - event: "RoyaltySet(uint16 bps)"
-        field_selection:
-          transaction_fields:
-            - hash
       - event: "ContractURISet(string contractURI)"
         field_selection:
           transaction_fields:
@@ -164,19 +152,6 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
-
-  - name: SuperMinterV2
-    handler: src/EventHandlers.ts
-    events:
-      # edition indexed only (tier is NOT indexed — verified on-chain)
-      - event: "MintCreated(address indexed edition, uint8 tier, uint8 scheduleNum, (address,uint96,uint32,uint32,uint32,uint32,uint16,bytes32,uint8,address,uint8,bytes32) creation)"
-        field_selection:
-          transaction_fields:
-            - hash
-      # edition IS indexed (verified on-chain)
-      - event: "PriceSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint96 price)"
-      - event: "TimeRangeSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 startTime, uint32 endTime)"
-      - event: "MaxMintablePerAccountSet(address indexed edition, uint8 tier, uint8 scheduleNum, uint32 value)"
 
   - name: ZoraMedia
     handler: src/EventHandlers.ts
@@ -249,10 +224,6 @@ networks:
         start_block: 25319173
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
-      - name: SuperMinterV2
-        start_block: 25319173
-        address:
-          - "0x000000000001A36777f9930aAEFf623771b13e70"
   - id: 8453
     start_block: 4783000
     contracts:
@@ -290,10 +261,6 @@ networks:
         start_block: 47346127
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
-      - name: SuperMinterV2
-        start_block: 47346127
-        address:
-          - "0x000000000001A36777f9930aAEFf623771b13e70"
       # ZoraCreatorFactory deployed at block 4,784,084 (2023-10-03)
       - name: ZoraCreatorFactory
         start_block: 4784084
@@ -328,9 +295,5 @@ networks:
         start_block: 152941412
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
-      - name: SuperMinterV2
-        start_block: 152941412
-        address:
-          - "0x000000000001A36777f9930aAEFf623771b13e70"
 unordered_multichain_mode: true
 preload_handlers: true
