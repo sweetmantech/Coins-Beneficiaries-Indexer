@@ -212,6 +212,16 @@ type Zora_Moments {
   transaction_hash: String!
 }
 
+type Zora_Admins {
+  id: ID!
+  admin: String!
+  collection: String!
+  token_id: BigInt!
+  chain_id: Int!
+  permission: Int!
+  updated_at: Int!
+}
+
 type Zora_Comments {
   id: ID!
   collection: String!

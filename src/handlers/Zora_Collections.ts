@@ -7,6 +7,7 @@ import {
   type contractRegistrations,
 } from "generated";
 import { buildCollection } from "@/lib/zora_protocol/buildCollection";
+import { buildContractLevelSecondarySale } from "@/lib/zora_protocol/buildContractLevelSecondarySale";
 
 ZoraCreatorFactory.SetupNewContract.contractRegister(
   ({
@@ -22,7 +23,9 @@ ZoraCreatorFactory.SetupNewContract.contractRegister(
 
 ZoraCreatorFactory.SetupNewContract.handler(
   async ({ event, context }: ZoraCreatorFactory_SetupNewContract_handlerArgs) => {
+    const collection = event.params.newContract.toLowerCase();
     context.Zora_Collections.set(buildCollection(event));
+    context.Secondary_Sales.set(buildContractLevelSecondarySale(collection, event));
   }
 );
 
