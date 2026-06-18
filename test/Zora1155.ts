@@ -1,12 +1,14 @@
 import assert from "assert";
 import { TestHelpers } from "generated";
-import type { Zora_Collections, Zora_Moments, Transfers } from "generated";
+import type { Zora_Collections, Zora_Moments, Zora_Comments, Transfers } from "generated";
 import { zeroAddress } from "viem";
 
 const {
   MockDb,
   ZoraCreatorFactory,
   ZoraCreator1155,
+  ZoraCreatorFixedPriceSaleStrategy,
+  ZoraERC20Minter,
 } = TestHelpers;
 
 const COLLECTION = "0x1234567890123456789012345678901234567890";
@@ -181,6 +183,75 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
 
       const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
       assert.equal(mockDbUpdated.entities.Zora_Moments.get(entityId), undefined);
+    });
+  });
+
+  // ─── Comments ────────────────────────────────────────────────────────────
+
+  describe("ZoraERC20Minter.MintComment", () => {
+    it("should create Zora_Comments entity", async () => {
+      const mockDb = MockDb.createMockDb();
+
+      const event = ZoraERC20Minter.MintComment.createMockEvent({
+        sender: BUYER,
+        tokenContract: COLLECTION,
+        tokenId: 1n,
+        quantity: 1n,
+        comment: "Great track!",
+      });
+
+      const mockDbUpdated = await ZoraERC20Minter.MintComment.processEvent({ event, mockDb });
+
+      const entityId = `${COLLECTION.toLowerCase()}_1_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const actualEntity = mockDbUpdated.entities.Zora_Comments.get(entityId);
+
+      const expectedEntity: Zora_Comments = {
+        id: entityId,
+        sender: BUYER.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
+        token_id: 1n,
+        comment: "Great track!",
+        commented_at: event.block.timestamp,
+        transaction_hash: event.transaction.hash,
+        chain_id: event.chainId,
+      };
+
+      assert.deepEqual(actualEntity, expectedEntity);
+    });
+  });
+
+  describe("ZoraCreatorFixedPriceSaleStrategy.MintComment", () => {
+    it("should create Zora_Comments entity", async () => {
+      const mockDb = MockDb.createMockDb();
+
+      const event = ZoraCreatorFixedPriceSaleStrategy.MintComment.createMockEvent({
+        sender: BUYER,
+        tokenContract: COLLECTION,
+        tokenId: 2n,
+        quantity: 1n,
+        comment: "Love this!",
+      });
+
+      const mockDbUpdated = await ZoraCreatorFixedPriceSaleStrategy.MintComment.processEvent({
+        event,
+        mockDb,
+      });
+
+      const entityId = `${COLLECTION.toLowerCase()}_2_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const actualEntity = mockDbUpdated.entities.Zora_Comments.get(entityId);
+
+      const expectedEntity: Zora_Comments = {
+        id: entityId,
+        sender: BUYER.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
+        token_id: 2n,
+        comment: "Love this!",
+        commented_at: event.block.timestamp,
+        transaction_hash: event.transaction.hash,
+        chain_id: event.chainId,
+      };
+
+      assert.deepEqual(actualEntity, expectedEntity);
     });
   });
 
