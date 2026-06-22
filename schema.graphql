@@ -35,16 +35,6 @@ type ZoraMedia_Moments {
   transaction_hash: String!
 }
 
-type ZoraMedia_Admins {
-  id: ID!
-  admin: String!
-  collection: String!
-  token_id: BigInt!
-  chain_id: Int!
-  permission: Int!
-  updated_at: Int!
-}
-
 type InProcess_Admins {
   id: ID!
   admin: String!
@@ -98,16 +88,6 @@ type Catalog_Albums {
   chain_id: Int!
 }
 
-type Catalog_Admins {
-  id: ID!
-  admin: String!
-  collection: String!
-  token_id: BigInt!
-  chain_id: Int!
-  auth_scope: Int!
-  updated_at: Int!
-}
-
 type Sound_Editions {
   id: ID!
   address: String!
@@ -133,16 +113,6 @@ type Sound_Moments {
   created_at: Int!
   updated_at: Int!
   transaction_hash: String!
-}
-
-type Sound_Admins {
-  id: ID!
-  collection: String!
-  token_id: BigInt!
-  admin: String!
-  roles: Int!
-  chain_id: Int!
-  updated_at: Int!
 }
 
 type Primary_Sales {

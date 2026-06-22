@@ -1,10 +1,8 @@
 import { decodeInitData } from "../../lib/sound_editions/decodeInitData";
-import { SOUND_ADMIN_ROLE } from "@/lib/consts";
 import {
   SoundCreatorV2,
   SoundEditionV2_1,
   type Sound_Editions,
-  type Sound_Admins,
   type Secondary_Sales,
   type SoundCreatorV2_Created_handlerArgs,
   type SoundEditionV2_1_ContractURISet_handlerArgs,
@@ -59,17 +57,6 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
     transaction_hash: event.transaction.hash,
   };
   context.Secondary_Sales.set(secondarySale);
-
-  const adminEntity: Sound_Admins = {
-    id: `${address}_${event.chainId}_0_${owner}`,
-    collection: address,
-    token_id: BigInt(0),
-    admin: owner,
-    roles: SOUND_ADMIN_ROLE,
-    chain_id: event.chainId,
-    updated_at: event.block.timestamp,
-  };
-  context.Sound_Admins.set(adminEntity);
 });
 
 SoundEditionV2_1.ContractURISet.handler(

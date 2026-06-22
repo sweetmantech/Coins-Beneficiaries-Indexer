@@ -97,8 +97,6 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
-      - event: ContractPermissionsUpdated (address indexed user, uint256 authScope)
-      - event: TokenPermissionsUpdated (uint256 indexed tokenId, address indexed user, uint256 authScope)
       - event: TokenPurchased (uint256 indexed tokenId, uint256 indexed amount, address indexed buyer, address referrer0, address referrer1)
         field_selection:
           transaction_fields:
@@ -123,7 +121,6 @@ contracts:
   - name: SoundEditionV2_1
     handler: src/EventHandlers.ts
     events:
-      - event: "RolesUpdated(address indexed user, uint256 indexed roles)"
       - event: "ContractURISet(string contractURI)"
         field_selection:
           transaction_fields:

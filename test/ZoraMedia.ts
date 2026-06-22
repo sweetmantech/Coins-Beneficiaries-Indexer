@@ -1,7 +1,7 @@
 import assert from "assert";
 import { encodeAbiParameters, encodeFunctionData, zeroAddress } from "viem";
 import { TestHelpers } from "generated";
-import type { Transfers, ZoraMedia_Admins, ZoraMedia_Moments } from "generated";
+import type { Transfers, ZoraMedia_Moments } from "generated";
 
 const { MockDb, ZoraMedia } = TestHelpers;
 
@@ -88,11 +88,9 @@ describe("ZoraMedia Handler Tests", () => {
 
       const momentsId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}`;
       const transferId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${event.block.number}_${event.logIndex}`;
-      const adminId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${event.chainId}_${tokenId}_${BUYER.toLowerCase()}`;
 
       assert.equal(mockDbUpdated.entities.ZoraMedia_Moments.get(momentsId), undefined);
       assert.equal(mockDbUpdated.entities.Transfers.get(transferId), undefined);
-      assert.equal(mockDbUpdated.entities.ZoraMedia_Admins.get(adminId), undefined);
     });
 
     it("should register a ZoraMedia token on mint", async () => {
@@ -332,35 +330,6 @@ describe("ZoraMedia Handler Tests", () => {
         transaction_hash: event.transaction.hash,
         block_number: BigInt(event.block.number),
         transferred_at: event.block.timestamp,
-      };
-
-      assert.deepEqual(actualEntity, expectedEntity);
-    });
-
-    it("should register mint recipient as initial ZoraMedia admin", async () => {
-      const mockDb = MockDb.createMockDb();
-      const tokenId = 2n;
-
-      const event = ZoraMedia.Transfer.createMockEvent({
-        from: zeroAddress,
-        to: BUYER,
-        tokenId,
-      });
-      (event as { srcAddress: string }).srcAddress = ZORA_MEDIA_COLLECTION;
-
-      const mockDbUpdated = await ZoraMedia.Transfer.processEvent({ event, mockDb });
-
-      const entityId = `${ZORA_MEDIA_COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${BUYER.toLowerCase()}`;
-      const actualEntity = mockDbUpdated.entities.ZoraMedia_Admins.get(entityId);
-
-      const expectedEntity: ZoraMedia_Admins = {
-        id: entityId,
-        admin: BUYER.toLowerCase(),
-        collection: ZORA_MEDIA_COLLECTION.toLowerCase(),
-        token_id: tokenId,
-        chain_id: event.chainId,
-        permission: 2,
-        updated_at: event.block.timestamp,
       };
 
       assert.deepEqual(actualEntity, expectedEntity);
