@@ -1,12 +1,7 @@
-import {
-  SoundMetadata,
-  SoundEditionV2_1,
-  type Sound_Moments,
-  type SoundMetadata_BaseURISet_handlerArgs,
-  type SoundEditionV2_1_TierCreated_handlerArgs,
-} from "generated";
+import { indexer, SoundMetadata, SoundEditionV2_1, type Sound_Moments, type SoundMetadata_BaseURISet_handlerArgs, type SoundEditionV2_1_TierCreated_handlerArgs } from "envio";
 
-SoundMetadata.BaseURISet.handler(
+indexer.onEvent(
+  { contract: "SoundMetadata", event: "BaseURISet" },
   async ({ event, context }: SoundMetadata_BaseURISet_handlerArgs) => {
     const edition = event.params.edition.toLowerCase();
     const tier = Number(event.params.tier);
@@ -29,7 +24,8 @@ SoundMetadata.BaseURISet.handler(
   }
 );
 
-SoundEditionV2_1.TierCreated.handler(
+indexer.onEvent(
+  { contract: "SoundEditionV2_1", event: "TierCreated" },
   async ({ event, context }: SoundEditionV2_1_TierCreated_handlerArgs) => {
     const edition = event.srcAddress.toLowerCase();
     const tier = Number(event.params.creation[0]);

@@ -1,6 +1,6 @@
 import assert from "assert";
-import { TestHelpers } from "generated";
-import type { Catalog_Albums, Catalog_Collections, Catalog_Moments, Transfers } from "generated";
+import { TestHelpers } from "envio";
+import type { Catalog_Albums, Catalog_Collections, Catalog_Moments, Transfers } from "envio";
 import { encodeFunctionData, maxUint256, zeroAddress } from "viem";
 import { crFactoryAbi } from "../lib/abi/crFactoryAbi";
 

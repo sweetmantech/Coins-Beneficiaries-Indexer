@@ -1,5 +1,5 @@
 import { zeroAddress } from "viem";
-import { type Transfers } from "generated";
+import { type Transfers } from "envio";
 import { getPreviousTransfers } from "@/lib/in_process_transfers/getPreviousTransfers";
 
 interface PurchasedEvent {

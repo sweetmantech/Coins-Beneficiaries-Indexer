@@ -1,5 +1,5 @@
 import { zeroAddress } from "viem";
-import { type Primary_Sales } from "generated";
+import { type Primary_Sales } from "envio";
 
 interface SaleSetEvent {
   params: {

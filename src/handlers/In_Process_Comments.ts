@@ -1,12 +1,8 @@
-import {
-  InProcessERC20Minter,
-  InProcessCreatorFixedPriceSaleStrategy,
-  type InProcessERC20Minter_MintComment_handlerArgs,
-  type InProcessCreatorFixedPriceSaleStrategy_MintComment_handlerArgs,
-} from "generated";
+import { indexer, InProcessERC20Minter, InProcessCreatorFixedPriceSaleStrategy, type InProcessERC20Minter_MintComment_handlerArgs, type InProcessCreatorFixedPriceSaleStrategy_MintComment_handlerArgs } from "envio";
 import { buildComment } from "@/lib/zora_protocol/buildComment";
 
-InProcessERC20Minter.MintComment.handler(
+indexer.onEvent(
+  { contract: "InProcessERC20Minter", event: "MintComment" },
   async ({ event, context }: InProcessERC20Minter_MintComment_handlerArgs) => {
     context.InProcess_Comments.set(
       buildComment(
@@ -24,7 +20,8 @@ InProcessERC20Minter.MintComment.handler(
   }
 );
 
-InProcessCreatorFixedPriceSaleStrategy.MintComment.handler(
+indexer.onEvent(
+  { contract: "InProcessCreatorFixedPriceSaleStrategy", event: "MintComment" },
   async ({ event, context }: InProcessCreatorFixedPriceSaleStrategy_MintComment_handlerArgs) => {
     context.InProcess_Comments.set(
       buildComment(

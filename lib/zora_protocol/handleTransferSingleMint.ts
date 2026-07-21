@@ -1,4 +1,4 @@
-import { type Transfers } from "generated";
+import { type Transfers } from "envio";
 import transferId from "@/lib/in_process_transfers/transferId";
 
 interface TransferSingleEvent {

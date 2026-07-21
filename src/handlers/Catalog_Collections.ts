@@ -1,26 +1,21 @@
-import {
-  CatalogReleaseFactory,
-  CatalogRelease1155,
-  type Catalog_Collections,
-  type CatalogReleaseFactory_CRContractCreated_handlerArgs,
-  type CatalogRelease1155_URI_handlerArgs,
-  type contractRegistrations,
-} from "generated";
+import { indexer, CatalogReleaseFactory, CatalogRelease1155, type Catalog_Collections, type CatalogReleaseFactory_CRContractCreated_handlerArgs, type CatalogRelease1155_URI_handlerArgs, type contractRegistrations } from "envio";
 import getNameFromCalldata from "@/lib/catalog_collections/getNameFromCalldata";
 
-CatalogReleaseFactory.CRContractCreated.contractRegister(
-  ({
+indexer.contractRegister(
+  { contract: "CatalogReleaseFactory", event: "CRContractCreated" },
+  async ({
     event,
     context,
   }: {
     event: { params: { _contractAddress: string } };
     context: contractRegistrations;
   }) => {
-    context.addCatalogRelease1155(event.params._contractAddress);
+    context.chain.CatalogRelease1155.add(event.params._contractAddress);
   }
 );
 
-CatalogReleaseFactory.CRContractCreated.handler(
+indexer.onEvent(
+  { contract: "CatalogReleaseFactory", event: "CRContractCreated" },
   async ({ event, context }: CatalogReleaseFactory_CRContractCreated_handlerArgs) => {
     const contractAddress = event.params._contractAddress.toLowerCase();
     const name = getNameFromCalldata(event.transaction.input);
@@ -39,7 +34,9 @@ CatalogReleaseFactory.CRContractCreated.handler(
   }
 );
 
-CatalogRelease1155.URI.handler(async ({ event, context }: CatalogRelease1155_URI_handlerArgs) => {
+indexer.onEvent(
+  { contract: "CatalogRelease1155", event: "URI" },
+  async ({ event, context }: CatalogRelease1155_URI_handlerArgs) => {
   if (event.params.id === BigInt(0)) {
     const existingEntity = await context.Catalog_Collections.get(
       `${event.srcAddress.toLowerCase()}_${event.chainId}`
@@ -60,4 +57,5 @@ CatalogRelease1155.URI.handler(async ({ event, context }: CatalogRelease1155_URI
     uri: event.params.value,
     updated_at: event.block.timestamp,
   });
-});
+}
+);

@@ -190,7 +190,7 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
-networks:
+chains:
   - id: 1
     start_block: 11565020
     contracts:
@@ -292,5 +292,3 @@ networks:
         start_block: 152941412
         address:
           - "0x0000000000f5A96Dc85959cAeb0Cfe680f108FB5"
-unordered_multichain_mode: true
-preload_handlers: true

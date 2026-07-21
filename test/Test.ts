@@ -1,13 +1,6 @@
 import assert from "assert";
-import { TestHelpers } from "generated";
-import type {
-  InProcess_Collections,
-  InProcess_Comments,
-  InProcess_Moments,
-  InProcess_Admins,
-  Transfers,
-  Primary_Sales,
-} from "generated";
+import { TestHelpers } from "envio";
+import type { InProcess_Collections, InProcess_Comments, InProcess_Moments, InProcess_Admins, Transfers, Primary_Sales } from "envio";
 import { zeroAddress } from "viem";
 
 const {

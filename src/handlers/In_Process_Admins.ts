@@ -1,11 +1,15 @@
-import {
-  InProcessMoment,
-  type InProcess_Admins,
-  type InProcessMoment_UpdatedPermissions_handlerArgs,
-} from "generated";
+import { indexer, InProcessMoment, type InProcess_Admins, type InProcessMoment_UpdatedPermissions_handlerArgs } from "envio";
 import { FACTORY_ADDRESSES } from "@/lib/consts";
 
-InProcessMoment.UpdatedPermissions.handler(
+indexer.onEvent(
+  { contract: "InProcessMoment", event: "UpdatedPermissions", eventFilters: [
+      {
+        permissions: BigInt(2),
+      },
+      {
+        permissions: BigInt(0),
+      },
+    ], },
   async ({ event, context }: InProcessMoment_UpdatedPermissions_handlerArgs) => {
     if (FACTORY_ADDRESSES.includes(event.params.user.toLowerCase())) return;
 
@@ -20,15 +24,5 @@ InProcessMoment.UpdatedPermissions.handler(
     };
 
     context.InProcess_Admins.set(entity);
-  },
-  {
-    eventFilters: [
-      {
-        permissions: BigInt(2),
-      },
-      {
-        permissions: BigInt(0),
-      },
-    ],
   }
 );

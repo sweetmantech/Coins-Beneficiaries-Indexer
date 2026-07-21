@@ -1,10 +1,7 @@
-import {
-  USDCFixedPriceController,
-  type USDCFixedPriceController_AlbumMintConfigurationUpdated_handlerArgs,
-  type Catalog_Albums,
-} from "generated";
+import { indexer, USDCFixedPriceController, type USDCFixedPriceController_AlbumMintConfigurationUpdated_handlerArgs, type Catalog_Albums } from "envio";
 
-USDCFixedPriceController.AlbumMintConfigurationUpdated.handler(
+indexer.onEvent(
+  { contract: "USDCFixedPriceController", event: "AlbumMintConfigurationUpdated" },
   async ({
     event,
     context,

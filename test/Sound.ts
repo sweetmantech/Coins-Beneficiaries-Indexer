@@ -1,7 +1,7 @@
 import assert from "assert";
 import { encodeAbiParameters, zeroAddress } from "viem";
-import { TestHelpers } from "generated";
-import type { Sound_Editions, Sound_Moments, Transfers } from "generated";
+import { TestHelpers } from "envio";
+import type { Sound_Editions, Sound_Moments, Transfers } from "envio";
 
 const { MockDb, SoundCreatorV2, SoundMetadata, SoundEditionV2_1 } = TestHelpers;
 
