@@ -1,10 +1,7 @@
-import {
-  CatalogRelease1155,
-  type Catalog_Moments,
-  type CatalogRelease1155_TokenCreated_handlerArgs,
-} from "generated";
+import { indexer, CatalogRelease1155, type Catalog_Moments, type CatalogRelease1155_TokenCreated_handlerArgs } from "envio";
 
-CatalogRelease1155.TokenCreated.handler(
+indexer.onEvent(
+  { contract: "CatalogRelease1155", event: "TokenCreated" },
   async ({ event, context }: CatalogRelease1155_TokenCreated_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const entity: Catalog_Moments = {

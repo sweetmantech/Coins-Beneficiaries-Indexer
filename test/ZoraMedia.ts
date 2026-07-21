@@ -1,7 +1,7 @@
 import assert from "assert";
 import { encodeAbiParameters, encodeFunctionData, zeroAddress } from "viem";
-import { TestHelpers } from "generated";
-import type { Transfers, ZoraMedia_Moments } from "generated";
+import { TestHelpers } from "envio";
+import type { Transfers, ZoraMedia_Moments } from "envio";
 
 const { MockDb, ZoraMedia } = TestHelpers;
 

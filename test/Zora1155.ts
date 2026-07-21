@@ -1,6 +1,6 @@
 import assert from "assert";
-import { TestHelpers } from "generated";
-import type { Zora_Collections, Zora_Moments } from "generated";
+import { TestHelpers } from "envio";
+import type { Zora_Collections, Zora_Moments } from "envio";
 
 const { MockDb, ZoraCreatorFactory, ZoraCreator1155 } = TestHelpers;
 

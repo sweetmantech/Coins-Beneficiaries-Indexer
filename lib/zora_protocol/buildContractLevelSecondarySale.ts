@@ -1,4 +1,4 @@
-import { type Secondary_Sales } from "generated";
+import { type Secondary_Sales } from "envio";
 
 interface SetupNewContractEvent {
   params: {

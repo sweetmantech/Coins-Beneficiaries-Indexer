@@ -1,28 +1,22 @@
 import { decodeInitData } from "../../lib/sound_editions/decodeInitData";
-import {
-  SoundCreatorV2,
-  SoundEditionV2_1,
-  type Sound_Editions,
-  type Secondary_Sales,
-  type SoundCreatorV2_Created_handlerArgs,
-  type SoundEditionV2_1_ContractURISet_handlerArgs,
-  type SoundEditionV2_1_BaseURISet_handlerArgs,
-  type contractRegistrations,
-} from "generated";
+import { indexer, SoundCreatorV2, SoundEditionV2_1, type Sound_Editions, type Secondary_Sales, type SoundCreatorV2_Created_handlerArgs, type SoundEditionV2_1_ContractURISet_handlerArgs, type SoundEditionV2_1_BaseURISet_handlerArgs, type contractRegistrations } from "envio";
 
-SoundCreatorV2.Created.contractRegister(
-  ({
+indexer.contractRegister(
+  { contract: "SoundCreatorV2", event: "Created" },
+  async ({
     event,
     context,
   }: {
     event: { params: { edition: string } };
     context: contractRegistrations;
   }) => {
-    context.addSoundEditionV2_1(event.params.edition);
+    context.chain.SoundEditionV2_1.add(event.params.edition);
   }
 );
 
-SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created_handlerArgs) => {
+indexer.onEvent(
+  { contract: "SoundCreatorV2", event: "Created" },
+  async ({ event, context }: SoundCreatorV2_Created_handlerArgs) => {
   const address = event.params.edition.toLowerCase();
   const owner = event.params.owner.toLowerCase();
   const { name, baseURI, contractURI, fundingRecipient, royaltyBPS } = decodeInitData(
@@ -57,9 +51,11 @@ SoundCreatorV2.Created.handler(async ({ event, context }: SoundCreatorV2_Created
     transaction_hash: event.transaction.hash,
   };
   context.Secondary_Sales.set(secondarySale);
-});
+}
+);
 
-SoundEditionV2_1.ContractURISet.handler(
+indexer.onEvent(
+  { contract: "SoundEditionV2_1", event: "ContractURISet" },
   async ({ event, context }: SoundEditionV2_1_ContractURISet_handlerArgs) => {
     const address = event.srcAddress.toLowerCase();
     const id = `${address}_${event.chainId}`;
@@ -75,7 +71,8 @@ SoundEditionV2_1.ContractURISet.handler(
   }
 );
 
-SoundEditionV2_1.BaseURISet.handler(
+indexer.onEvent(
+  { contract: "SoundEditionV2_1", event: "BaseURISet" },
   async ({ event, context }: SoundEditionV2_1_BaseURISet_handlerArgs) => {
     const address = event.srcAddress.toLowerCase();
     const id = `${address}_${event.chainId}`;

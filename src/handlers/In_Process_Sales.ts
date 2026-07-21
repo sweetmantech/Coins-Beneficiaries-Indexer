@@ -1,18 +1,15 @@
-import {
-  InProcessCreatorFixedPriceSaleStrategy,
-  InProcessERC20Minter,
-  type InProcessERC20Minter_SaleSet_handlerArgs,
-  type InProcessCreatorFixedPriceSaleStrategy_SaleSet_handlerArgs,
-} from "generated";
+import { indexer, InProcessCreatorFixedPriceSaleStrategy, InProcessERC20Minter, type InProcessERC20Minter_SaleSet_handlerArgs, type InProcessCreatorFixedPriceSaleStrategy_SaleSet_handlerArgs } from "envio";
 import { buildSale } from "@/lib/zora_protocol/buildSale";
 
-InProcessERC20Minter.SaleSet.handler(
+indexer.onEvent(
+  { contract: "InProcessERC20Minter", event: "SaleSet" },
   async ({ event, context }: InProcessERC20Minter_SaleSet_handlerArgs) => {
     context.Primary_Sales.set(buildSale(event));
   }
 );
 
-InProcessCreatorFixedPriceSaleStrategy.SaleSet.handler(
+indexer.onEvent(
+  { contract: "InProcessCreatorFixedPriceSaleStrategy", event: "SaleSet" },
   async ({ event, context }: InProcessCreatorFixedPriceSaleStrategy_SaleSet_handlerArgs) => {
     context.Primary_Sales.set(buildSale(event));
   }

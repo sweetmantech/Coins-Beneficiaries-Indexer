@@ -1,12 +1,9 @@
-import {
-  SoundEditionV2_1,
-  type SoundEditionV2_1_Minted_handlerArgs,
-  type SoundEditionV2_1_Airdropped_handlerArgs,
-  type Transfers,
-} from "generated";
+import { indexer, SoundEditionV2_1, type SoundEditionV2_1_Minted_handlerArgs, type SoundEditionV2_1_Airdropped_handlerArgs, type Transfers } from "envio";
 
 // Covers all mints: user purchases (via SuperMinterV2) and direct admin mints
-SoundEditionV2_1.Minted.handler(async ({ event, context }: SoundEditionV2_1_Minted_handlerArgs) => {
+indexer.onEvent(
+  { contract: "SoundEditionV2_1", event: "Minted" },
+  async ({ event, context }: SoundEditionV2_1_Minted_handlerArgs) => {
   const collection = event.srcAddress.toLowerCase();
   const tier = BigInt(event.params.tier);
 
@@ -24,10 +21,12 @@ SoundEditionV2_1.Minted.handler(async ({ event, context }: SoundEditionV2_1_Mint
     transferred_at: event.block.timestamp,
   };
   context.Transfers.set(entity);
-});
+}
+);
 
 // Covers all airdrops: platform-initiated (via SuperMinterV2) and direct admin calls
-SoundEditionV2_1.Airdropped.handler(
+indexer.onEvent(
+  { contract: "SoundEditionV2_1", event: "Airdropped" },
   async ({ event, context }: SoundEditionV2_1_Airdropped_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const tier = BigInt(event.params.tier);

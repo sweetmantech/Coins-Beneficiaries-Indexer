@@ -1,32 +1,28 @@
-import {
-  ZoraCreatorFactory,
-  ZoraCreator1155,
-  type ZoraCreatorFactory_SetupNewContract_event,
-  type ZoraCreatorFactory_SetupNewContract_handlerArgs,
-  type ZoraCreator1155_ContractMetadataUpdated_handlerArgs,
-  type contractRegistrations,
-} from "generated";
+import { indexer, ZoraCreatorFactory, ZoraCreator1155, type ZoraCreatorFactory_SetupNewContract_event, type ZoraCreatorFactory_SetupNewContract_handlerArgs, type ZoraCreator1155_ContractMetadataUpdated_handlerArgs, type contractRegistrations } from "envio";
 import { buildCollection } from "@/lib/zora_protocol/buildCollection";
 
-ZoraCreatorFactory.SetupNewContract.contractRegister(
-  ({
+indexer.contractRegister(
+  { contract: "ZoraCreatorFactory", event: "SetupNewContract" },
+  async ({
     event,
     context,
   }: {
     event: ZoraCreatorFactory_SetupNewContract_event;
     context: contractRegistrations;
   }) => {
-    context.addZoraCreator1155(event.params.newContract);
+    context.chain.ZoraCreator1155.add(event.params.newContract);
   }
 );
 
-ZoraCreatorFactory.SetupNewContract.handler(
+indexer.onEvent(
+  { contract: "ZoraCreatorFactory", event: "SetupNewContract" },
   async ({ event, context }: ZoraCreatorFactory_SetupNewContract_handlerArgs) => {
     context.Zora_Collections.set(buildCollection(event));
   }
 );
 
-ZoraCreator1155.ContractMetadataUpdated.handler(
+indexer.onEvent(
+  { contract: "ZoraCreator1155", event: "ContractMetadataUpdated" },
   async ({ event, context }: ZoraCreator1155_ContractMetadataUpdated_handlerArgs) => {
     const existing = await context.Zora_Collections.get(
       `${event.srcAddress.toLowerCase()}_${event.chainId}`

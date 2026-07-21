@@ -1,12 +1,7 @@
-import {
-  CatalogRelease1155,
-  type CatalogRelease1155_TokenPurchased_handlerArgs,
-  type CatalogRelease1155_AlbumPurchased_handlerArgs,
-  type CatalogRelease1155_TokenMinted_handlerArgs,
-  type Transfers,
-} from "generated";
+import { indexer, CatalogRelease1155, type CatalogRelease1155_TokenPurchased_handlerArgs, type CatalogRelease1155_AlbumPurchased_handlerArgs, type CatalogRelease1155_TokenMinted_handlerArgs, type Transfers } from "envio";
 
-CatalogRelease1155.TokenPurchased.handler(
+indexer.onEvent(
+  { contract: "CatalogRelease1155", event: "TokenPurchased" },
   async ({ event, context }: CatalogRelease1155_TokenPurchased_handlerArgs) => {
     const entity: Transfers = {
       id: `${event.srcAddress.toLowerCase()}_${event.params.tokenId.toString()}_${event.chainId}_${event.block.number}_${event.logIndex}`,
@@ -25,7 +20,8 @@ CatalogRelease1155.TokenPurchased.handler(
   }
 );
 
-CatalogRelease1155.AlbumPurchased.handler(
+indexer.onEvent(
+  { contract: "CatalogRelease1155", event: "AlbumPurchased" },
   async ({ event, context }: CatalogRelease1155_AlbumPurchased_handlerArgs) => {
     const albumId = `${event.srcAddress.toLowerCase()}_${event.params.albumId.toString()}_${event.chainId}`;
     const albumRecord = await context.Catalog_Albums.get(albumId);
@@ -54,7 +50,8 @@ CatalogRelease1155.AlbumPurchased.handler(
   }
 );
 
-CatalogRelease1155.TokenMinted.handler(
+indexer.onEvent(
+  { contract: "CatalogRelease1155", event: "TokenMinted" },
   async ({ event, context }: CatalogRelease1155_TokenMinted_handlerArgs) => {
     const entity: Transfers = {
       id: `${event.srcAddress.toLowerCase()}_${event.params.tokenId.toString()}_${event.chainId}_${event.block.number}_${event.logIndex}`,

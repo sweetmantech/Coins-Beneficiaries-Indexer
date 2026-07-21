@@ -1,15 +1,10 @@
-import {
-  ZoraMedia,
-  type Transfers,
-  type ZoraMedia_Moments,
-  type ZoraMedia_Transfer_handlerArgs,
-  type ZoraMedia_TokenURIUpdated_handlerArgs,
-  type ZoraMedia_TokenMetadataURIUpdated_handlerArgs,
-} from "generated";
+import { indexer, ZoraMedia, type Transfers, type ZoraMedia_Moments, type ZoraMedia_Transfer_handlerArgs, type ZoraMedia_TokenURIUpdated_handlerArgs, type ZoraMedia_TokenMetadataURIUpdated_handlerArgs } from "envio";
 import { zeroAddress } from "viem";
 import getInitialUrisFromCalldata from "@/lib/zora_media/getInitialUrisFromCalldata";
 
-ZoraMedia.Transfer.handler(async ({ event, context }: ZoraMedia_Transfer_handlerArgs) => {
+indexer.onEvent(
+  { contract: "ZoraMedia", event: "Transfer" },
+  async ({ event, context }: ZoraMedia_Transfer_handlerArgs) => {
   const collection = event.srcAddress.toLowerCase();
   const tokenId = event.params.tokenId;
   const fromAddress = event.params.from.toLowerCase();
@@ -49,9 +44,11 @@ ZoraMedia.Transfer.handler(async ({ event, context }: ZoraMedia_Transfer_handler
     block_number: BigInt(event.block.number),
     transferred_at: event.block.timestamp,
   } as Transfers);
-});
+}
+);
 
-ZoraMedia.TokenURIUpdated.handler(
+indexer.onEvent(
+  { contract: "ZoraMedia", event: "TokenURIUpdated" },
   async ({ event, context }: ZoraMedia_TokenURIUpdated_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const tokenId = event.params._tokenId;
@@ -76,7 +73,8 @@ ZoraMedia.TokenURIUpdated.handler(
   }
 );
 
-ZoraMedia.TokenMetadataURIUpdated.handler(
+indexer.onEvent(
+  { contract: "ZoraMedia", event: "TokenMetadataURIUpdated" },
   async ({ event, context }: ZoraMedia_TokenMetadataURIUpdated_handlerArgs) => {
     const collection = event.srcAddress.toLowerCase();
     const tokenId = event.params._tokenId;
