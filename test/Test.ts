@@ -95,6 +95,7 @@ describe("Event Handler Tests", () => {
         comment: "Test comment",
         comment_id: undefined,
         reply_to_id: undefined,
+        nonce: undefined,
         sparks_quantity: undefined,
         commented_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
@@ -133,6 +134,7 @@ describe("Event Handler Tests", () => {
         comment: "ETH mint comment",
         comment_id: undefined,
         reply_to_id: undefined,
+        nonce: undefined,
         sparks_quantity: undefined,
         commented_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
@@ -147,6 +149,7 @@ describe("Event Handler Tests", () => {
     const COMMENT_ID = "0xab6776473e27a7c8f9ee24553dfae47a10eb525142f6161de6346ecf48e77b60";
     const PARENT_COMMENT_ID = "0x1111111111111111111111111111111111111111111111111111111111111111";
     const ZERO_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
+    const NONCE = "0x0000000000000000000000000000000000000000000000000000000000082e64";
 
     it("should index Commented for InProcess collections including replies", async () => {
       let mockDb = MockDb.createMockDb();
@@ -165,7 +168,7 @@ describe("Event Handler Tests", () => {
 
       const event = ZoraComments.Commented.createMockEvent({
         commentId: COMMENT_ID,
-        commentIdentifier: [BUYER, COLLECTION, 3n, ZERO_BYTES32],
+        commentIdentifier: [BUYER, COLLECTION, 3n, NONCE],
         replyToId: PARENT_COMMENT_ID,
         replyTo: [ADMIN, COLLECTION, 3n, ZERO_BYTES32],
         sparksQuantity: 1n,
@@ -190,6 +193,7 @@ describe("Event Handler Tests", () => {
         comment: "Reply comment",
         comment_id: COMMENT_ID,
         reply_to_id: PARENT_COMMENT_ID,
+        nonce: NONCE,
         sparks_quantity: 1n,
         commented_at: 1234567890,
         transaction_hash: event.transaction.hash,

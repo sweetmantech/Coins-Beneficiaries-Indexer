@@ -45,7 +45,7 @@ InProcessCreatorFixedPriceSaleStrategy.MintComment.handler(
 );
 
 ZoraComments.Commented.handler(async ({ event, context }: ZoraComments_Commented_handlerArgs) => {
-  const [commenter, contractAddress, tokenId] = event.params.commentIdentifier;
+  const [commenter, contractAddress, tokenId, nonce] = event.params.commentIdentifier;
   const collection = contractAddress.toLowerCase();
 
   const inProcessCollection = await context.InProcess_Collections.get(
@@ -68,6 +68,7 @@ ZoraComments.Commented.handler(async ({ event, context }: ZoraComments_Commented
       txHash: event.transaction.hash,
       commentId: event.params.commentId,
       replyToId: event.params.replyToId,
+      nonce,
       sparksQuantity: event.params.sparksQuantity,
     })
   );

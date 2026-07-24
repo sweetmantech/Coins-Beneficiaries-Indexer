@@ -54,6 +54,8 @@ type InProcess_Comments {
   # Zora Comments protocol fields (null for legacy MintComment)
   comment_id: String
   reply_to_id: String
+  # CommentIdentifier.nonce — needed to assemble replyTo calldata
+  nonce: String
   sparks_quantity: BigInt
   chain_id: Int!
   commented_at: Int!
