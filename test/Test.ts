@@ -17,6 +17,7 @@ const {
   InProcessERC20Minter,
   InProcessMoment,
   CatalogRelease1155,
+  ZoraComments,
 } = TestHelpers;
 
 const COLLECTION = "0x1234567890123456789012345678901234567890";
@@ -92,6 +93,10 @@ describe("Event Handler Tests", () => {
         collection: COLLECTION.toLowerCase(),
         token_id: 1n,
         comment: "Test comment",
+        comment_id: undefined,
+        reply_to_id: undefined,
+        nonce: undefined,
+        sparks_quantity: undefined,
         commented_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
         chain_id: event.chainId,
@@ -127,12 +132,98 @@ describe("Event Handler Tests", () => {
         collection: COLLECTION.toLowerCase(),
         token_id: 1n,
         comment: "ETH mint comment",
+        comment_id: undefined,
+        reply_to_id: undefined,
+        nonce: undefined,
+        sparks_quantity: undefined,
         commented_at: event.block.timestamp,
         transaction_hash: event.transaction.hash,
         chain_id: event.chainId,
       };
 
       assert.deepEqual(actualEntity, expectedEntity);
+    });
+  });
+
+  describe("ZoraComments.Commented", () => {
+    const COMMENT_ID = "0xab6776473e27a7c8f9ee24553dfae47a10eb525142f6161de6346ecf48e77b60";
+    const PARENT_COMMENT_ID = "0x1111111111111111111111111111111111111111111111111111111111111111";
+    const ZERO_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
+    const NONCE = "0x0000000000000000000000000000000000000000000000000000000000082e64";
+
+    it("should index Commented for InProcess collections including replies", async () => {
+      let mockDb = MockDb.createMockDb();
+
+      const setupEvent = InProcessCreatorFactory.SetupNewContract.createMockEvent({
+        newContract: COLLECTION,
+        name: "Test Collection",
+        defaultAdmin: ADMIN,
+        contractURI: "https://example.com/contract",
+        defaultRoyaltyConfiguration: [0n, 0n, FUNDS_RECIPIENT],
+      });
+      mockDb = await InProcessCreatorFactory.SetupNewContract.processEvent({
+        event: setupEvent,
+        mockDb,
+      });
+
+      const event = ZoraComments.Commented.createMockEvent({
+        commentId: COMMENT_ID,
+        commentIdentifier: [BUYER, COLLECTION, 3n, NONCE],
+        replyToId: PARENT_COMMENT_ID,
+        replyTo: [ADMIN, COLLECTION, 3n, ZERO_BYTES32],
+        sparksQuantity: 1n,
+        text: "Reply comment",
+        timestamp: 1234567890n,
+        referrer: zeroAddress,
+      });
+
+      mockDb = await ZoraComments.Commented.processEvent({
+        event,
+        mockDb,
+      });
+
+      const entityId = `${COMMENT_ID}_${event.chainId}`;
+      const actualEntity = mockDb.entities.InProcess_Comments.get(entityId);
+
+      const expectedEntity: InProcess_Comments = {
+        id: entityId,
+        sender: BUYER.toLowerCase(),
+        collection: COLLECTION.toLowerCase(),
+        token_id: 3n,
+        comment: "Reply comment",
+        comment_id: COMMENT_ID,
+        reply_to_id: PARENT_COMMENT_ID,
+        nonce: NONCE,
+        sparks_quantity: 1n,
+        commented_at: 1234567890,
+        transaction_hash: event.transaction.hash,
+        chain_id: event.chainId,
+      };
+
+      assert.deepEqual(actualEntity, expectedEntity);
+    });
+
+    it("should skip Commented for non-InProcess collections", async () => {
+      const mockDb = MockDb.createMockDb();
+
+      const event = ZoraComments.Commented.createMockEvent({
+        commentId: COMMENT_ID,
+        commentIdentifier: [BUYER, COLLECTION, 3n, ZERO_BYTES32],
+        replyToId: ZERO_BYTES32,
+        replyTo: [zeroAddress, zeroAddress, 0n, ZERO_BYTES32],
+        sparksQuantity: 1n,
+        text: "Ignored comment",
+        timestamp: 1234567890n,
+        referrer: zeroAddress,
+      });
+
+      const mockDbUpdated = await ZoraComments.Commented.processEvent({
+        event,
+        mockDb,
+      });
+
+      const entityId = `${COMMENT_ID}_${event.chainId}`;
+      assert.equal(mockDbUpdated.entities.InProcess_Comments.get(entityId), undefined);
     });
   });
 

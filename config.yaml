@@ -37,6 +37,15 @@ contracts:
           transaction_fields:
             - hash
 
+  # Zora Comments protocol — filter to InProcess collections in handler
+  - name: ZoraComments
+    handler: src/EventHandlers.ts
+    events:
+      - event: Commented(bytes32 indexed commentId, (address,address,uint256,bytes32) commentIdentifier, bytes32 replyToId, (address,address,uint256,bytes32) replyTo, uint256 sparksQuantity, string text, uint256 timestamp, address referrer)
+        field_selection:
+          transaction_fields:
+            - hash
+
   - name: InProcessMoment
     handler: src/EventHandlers.ts
     events:
@@ -211,6 +220,11 @@ networks:
           - 0x2bf5EBEEb028D5F9E02F0F432Ebb1a192F5528F1
       - name: InProcessMoment
         start_block: 25216322
+      # Align with InProcess start — skip pre-InProcess Zora Comments volume
+      - name: ZoraComments
+        start_block: 25216322
+        address:
+          - 0x7777777C2B3132e03a65721a41745C07170a5877
       - name: SoundCreatorV2
         start_block: 18202906
         address:
@@ -238,6 +252,11 @@ networks:
         start_block: 27712746
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
+      # Align with InProcess start — skip pre-InProcess Zora Comments volume
+      - name: ZoraComments
+        start_block: 27712746
+        address:
+          - 0x7777777C2B3132e03a65721a41745C07170a5877
       - name: CatalogReleaseFactory
         start_block: 18357751
         address:
@@ -279,6 +298,9 @@ networks:
       - name: InProcessCreatorFixedPriceSaleStrategy
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
+      - name: ZoraComments
+        address:
+          - 0x7777777C2B3132e03a65721a41745C07170a5877
 
   - id: 10
     start_block: 109963104
