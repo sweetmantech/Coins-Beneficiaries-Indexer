@@ -1,4 +1,5 @@
-const ZERO_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
+import { normalizeBytes32 } from "@/lib/zora_protocol/normalizeBytes32";
+import { normalizeNonce } from "@/lib/zora_protocol/normalizeNonce";
 
 export type BuildCommentInput = {
   tokenContract: string;
@@ -12,22 +13,9 @@ export type BuildCommentInput = {
   txHash: string;
   commentId?: string | null;
   replyToId?: string | null;
-  /** CommentIdentifier.nonce — valid even when zero; do not treat 0x00..00 as absent */
   nonce?: string | null;
   sparksQuantity?: bigint | null;
 };
-
-function normalizeBytes32(value: string | null | undefined): string | undefined {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase();
-  if (normalized === ZERO_BYTES32) return undefined;
-  return normalized;
-}
-
-function normalizeNonce(value: string | null | undefined): string | undefined {
-  if (value == null || value === "") return undefined;
-  return value.toLowerCase();
-}
 
 export function buildComment({
   tokenContract,
