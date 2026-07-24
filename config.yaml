@@ -220,9 +220,9 @@ networks:
           - 0x2bf5EBEEb028D5F9E02F0F432Ebb1a192F5528F1
       - name: InProcessMoment
         start_block: 25216322
-      # Align with InProcess start — skip pre-InProcess Zora Comments volume
+      # After Supabase backfill — ~1 day before tip for overlap margin (no Eth protocol comments yet)
       - name: ZoraComments
-        start_block: 25216322
+        start_block: 25596261
         address:
           - 0x7777777C2B3132e03a65721a41745C07170a5877
       - name: SoundCreatorV2
@@ -252,9 +252,9 @@ networks:
         start_block: 27712746
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
-      # Align with InProcess start — skip pre-InProcess Zora Comments volume
+      # After Supabase backfill — last InProcess Commented (tx 0x3f11f671…760b)
       - name: ZoraComments
-        start_block: 27712746
+        start_block: 48953339
         address:
           - 0x7777777C2B3132e03a65721a41745C07170a5877
       - name: CatalogReleaseFactory
