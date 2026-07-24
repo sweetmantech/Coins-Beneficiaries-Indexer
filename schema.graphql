@@ -51,6 +51,10 @@ type InProcess_Comments {
   sender: String!
   token_id: BigInt!
   comment: String
+  # Zora Comments protocol fields (null for legacy MintComment)
+  comment_id: String
+  reply_to_id: String
+  sparks_quantity: BigInt
   chain_id: Int!
   commented_at: Int!
   transaction_hash: String!
