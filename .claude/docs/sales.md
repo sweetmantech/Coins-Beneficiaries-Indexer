@@ -86,16 +86,20 @@ type Secondary_Sales {
 
 ## Comments
 
-InProcess tracks mint-time comments and Zora Comments protocol comments (including replies) on InProcess moments.
+InProcess tracks mint-time comments and protocol comments (including replies) on InProcess moments.
 
 - Mint events: `MintComment(...)` from `InProcessERC20Minter` and `InProcessCreatorFixedPriceSaleStrategy`
   - Entity ID: `${tokenContract}_${tokenId}_${chainId}_${blockNumber}_${logIndex}`
   - `comment_id` / `reply_to_id` / `nonce` / `sparks_quantity` are null
-- Protocol events: `Commented(...)` from `ZoraComments` (`0x7777777C2B3132e03a65721a41745C07170a5877`)
+- Protocol events: `Commented(...)` from:
+  - `ZoraComments` (`0x7777777C2B3132e03a65721a41745C07170a5877`) — historical Zora Comments
+  - `InProcessComments` — In Process free-comments proxy
+    - Base `8453`: `0x81580CB752C90bfcebbCE1b257Aa632ea80021ba` (start_block `49187699`)
+    - Base Sepolia `84532`: `0xc88Ed284283d941124B61E5049AD276935693b8C` (start_block `44696350`)
   - Filtered in handler via `InProcess_Collections` lookup on `commentIdentifier.contractAddress`
   - Entity ID: `${commentId}_${chainId}`
   - Stores `comment_id`, `reply_to_id` (null for top-level), `nonce` (for replyTo calldata), `sparks_quantity`
-- Handler: `src/handlers/In_Process_Comments.ts` → `lib/zora_protocol/buildComment.ts`
+- Handler: `src/handlers/In_Process_Comments.ts` → `lib/zora_protocol/handleCommented.ts` → `lib/zora_protocol/buildComment.ts` (shared for Zora + In Process Comments)
 - Schema: `InProcess_Comments` — fields: `collection, sender, token_id, comment, comment_id, reply_to_id, nonce, sparks_quantity, chain_id, commented_at, transaction_hash`
 
 ---
