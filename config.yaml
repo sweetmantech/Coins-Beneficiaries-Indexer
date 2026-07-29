@@ -266,11 +266,11 @@ networks:
         start_block: 48953339
         address:
           - 0x7777777C2B3132e03a65721a41745C07170a5877
-      # In Process Comments proxy deploy (~49187699)
+      # In Process Comments proxy deploy (new admin / atomic init)
       - name: InProcessComments
-        start_block: 49187699
+        start_block: 49254621
         address:
-          - 0x81580CB752C90bfcebbCE1b257Aa632ea80021ba
+          - 0x89d1e8b71330cd1d5d651b2d3a62472e10dd567d
       - name: CatalogReleaseFactory
         start_block: 18357751
         address:
@@ -315,11 +315,11 @@ networks:
       - name: ZoraComments
         address:
           - 0x7777777C2B3132e03a65721a41745C07170a5877
-      # In Process Comments proxy deploy (~44696350)
+      # In Process Comments proxy deploy (new admin)
       - name: InProcessComments
-        start_block: 44696350
+        start_block: 44730921
         address:
-          - 0xc88Ed284283d941124B61E5049AD276935693b8C
+          - 0x3836fa55a5d35445d6ede75b4f0991e850546dec
 
   - id: 10
     start_block: 109963104
