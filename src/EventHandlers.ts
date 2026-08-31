@@ -15,4 +15,5 @@ import "./handlers/Sound_Moments";
 import "./handlers/Sound_Transfers";
 import "./handlers/Zora_Collections";
 import "./handlers/Zora_Moments";
-import "./handlers/Zora_Transfers";
+import "./handlers/InPublic_Moments";
+import "./handlers/InPublic_Transfers";
