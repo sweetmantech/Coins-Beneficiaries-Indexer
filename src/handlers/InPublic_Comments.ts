@@ -1,12 +1,12 @@
 import {
-  ZoraCreatorFixedPriceSaleStrategy,
-  type ZoraCreatorFixedPriceSaleStrategy_MintComment_handlerArgs,
+  InPublicFixedPriceSale,
+  type InPublicFixedPriceSale_MintComment_handlerArgs,
 } from "generated";
 import { buildComment } from "@/lib/zora_protocol/buildComment";
 import { isInPublicCollection } from "@/lib/inpublic/constants";
 
-ZoraCreatorFixedPriceSaleStrategy.MintComment.handler(
-  async ({ event, context }: ZoraCreatorFixedPriceSaleStrategy_MintComment_handlerArgs) => {
+InPublicFixedPriceSale.MintComment.handler(
+  async ({ event, context }: InPublicFixedPriceSale_MintComment_handlerArgs) => {
     if (!isInPublicCollection(event.params.tokenContract)) return;
 
     context.InProcess_Comments.set(
