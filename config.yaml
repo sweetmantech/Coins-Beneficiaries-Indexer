@@ -296,8 +296,14 @@ networks:
         start_block: 4784084
         address:
           - "0x777777C338d93e2C7adf08D102d45CA7CC4Ed021"
+      # Dynamically registered via ZoraCreatorFactory (post-migration cutoff)
       - name: ZoraCreator1155
         start_block: 47389326
+      # IN PUBLIC legacy 1155 — explicit address; SetupNewToken from deploy (2024-07-12, block 17016014)
+      - name: ZoraCreator1155
+        start_block: 17016014
+        address:
+          - 0x3f209430017e4Fa79FEcf663Faff8584c0feAc78
 
   - id: 84532
     start_block: 23208989
