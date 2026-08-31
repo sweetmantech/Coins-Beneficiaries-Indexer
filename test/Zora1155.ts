@@ -7,8 +7,6 @@ const { MockDb, ZoraCreatorFactory, ZoraCreator1155 } = TestHelpers;
 const COLLECTION = "0x1234567890123456789012345678901234567890";
 const ADMIN = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
 const FUNDS_RECIPIENT = "0x5555555555555555555555555555555555555555";
-const BUYER = "0xcfbf34d385ea2d5eb947063b67ea226dcda3dc38";
-const ZORA_FACTORY = "0x777777C338d93e2C7adf08D102d45CA7CC4Ed021";
 
 describe("Zora 1155 Creator Protocol Handler Tests", () => {
   // ─── Collections ─────────────────────────────────────────────────────────

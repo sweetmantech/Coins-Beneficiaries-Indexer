@@ -208,6 +208,25 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
+  - name: InPublic1155
+    handler: src/EventHandlers.ts
+    events:
+      - event: SetupNewToken (uint256 indexed tokenId, address indexed sender, string newURI, uint256 maxSupply)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: URI (string value, uint256 indexed id)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TransferSingle (address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: TransferBatch (address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)
+        field_selection:
+          transaction_fields:
+            - hash
 networks:
   - id: 1
     start_block: 11565020
@@ -299,8 +318,8 @@ networks:
       # Dynamically registered via ZoraCreatorFactory (post-migration cutoff)
       - name: ZoraCreator1155
         start_block: 47389326
-      # IN PUBLIC legacy 1155 — explicit address; SetupNewToken from deploy (2024-07-12, block 17016014)
-      - name: ZoraCreator1155
+      # IN PUBLIC 1155 (@inpublic) — explicit address from deploy (2024-07-12, block 17016014)
+      - name: InPublic1155
         start_block: 17016014
         address:
           - 0x3f209430017e4Fa79FEcf663Faff8584c0feAc78
