@@ -208,14 +208,6 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
-      - event: TransferSingle (address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
-        field_selection:
-          transaction_fields:
-            - hash
-      - event: TransferBatch (address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)
-        field_selection:
-          transaction_fields:
-            - hash
   - name: ZoraCreator1155Legacy
     handler: src/EventHandlers.ts
     events:
