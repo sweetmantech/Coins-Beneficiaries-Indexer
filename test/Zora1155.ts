@@ -3,7 +3,7 @@ import { TestHelpers } from "generated";
 import type { Transfers, Zora_Collections, Zora_Moments } from "generated";
 import { zeroAddress } from "viem";
 
-const { MockDb, ZoraCreatorFactory, ZoraCreator1155, ZoraCreator1155Legacy } = TestHelpers;
+const { MockDb, ZoraCreatorFactory, ZoraCreator1155, InPublic1155 } = TestHelpers;
 
 const COLLECTION = "0x1234567890123456789012345678901234567890";
 const ADMIN = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
@@ -182,14 +182,14 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
 
   // ─── Transfers ───────────────────────────────────────────────────────────
 
-  describe("ZoraCreator1155Legacy.TransferSingle", () => {
+  describe("InPublic1155.TransferSingle", () => {
     it("should create Transfers entity for mints and secondary transfers", async () => {
       const tokenId = 1n;
       const quantity = 2n;
       const txHash = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd";
       const mockDb = MockDb.createMockDb();
 
-      const event = ZoraCreator1155Legacy.TransferSingle.createMockEvent({
+      const event = InPublic1155.TransferSingle.createMockEvent({
         operator: ADMIN,
         from: zeroAddress,
         to: BUYER,
@@ -199,7 +199,7 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
       });
       (event.transaction as { hash: string }).hash = txHash;
 
-      const mockDbUpdated = await ZoraCreator1155Legacy.TransferSingle.processEvent({ event, mockDb });
+      const mockDbUpdated = await InPublic1155.TransferSingle.processEvent({ event, mockDb });
 
       const mintLogIndex = Number((event as { logIndex?: number }).logIndex ?? 0);
       const entityId = `${COLLECTION.toLowerCase()}_${tokenId}_${event.chainId}_${txHash}_${mintLogIndex}`;
@@ -225,7 +225,7 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
     it("should skip burns to zeroAddress", async () => {
       const mockDb = MockDb.createMockDb();
 
-      const event = ZoraCreator1155Legacy.TransferSingle.createMockEvent({
+      const event = InPublic1155.TransferSingle.createMockEvent({
         operator: ADMIN,
         from: BUYER,
         to: zeroAddress,
@@ -234,18 +234,18 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
         mockEventData: { srcAddress: COLLECTION },
       });
 
-      const mockDbUpdated = await ZoraCreator1155Legacy.TransferSingle.processEvent({ event, mockDb });
+      const mockDbUpdated = await InPublic1155.TransferSingle.processEvent({ event, mockDb });
 
       assert.equal(mockDbUpdated.entities.Transfers.getAll().length, 0);
     });
   });
 
-  describe("ZoraCreator1155Legacy.TransferBatch", () => {
+  describe("InPublic1155.TransferBatch", () => {
     it("should create one Transfers row per id in the batch", async () => {
       const txHash = "0x1234567890123456789012345678901234567890123456789012345678901234";
       const mockDb = MockDb.createMockDb();
 
-      const event = ZoraCreator1155Legacy.TransferBatch.createMockEvent({
+      const event = InPublic1155.TransferBatch.createMockEvent({
         operator: ADMIN,
         from: zeroAddress,
         to: BUYER,
@@ -255,7 +255,7 @@ describe("Zora 1155 Creator Protocol Handler Tests", () => {
       });
       (event.transaction as { hash: string }).hash = txHash;
 
-      const mockDbUpdated = await ZoraCreator1155Legacy.TransferBatch.processEvent({ event, mockDb });
+      const mockDbUpdated = await InPublic1155.TransferBatch.processEvent({ event, mockDb });
 
       const logIndex = Number((event as { logIndex?: number }).logIndex ?? 0);
       const collection = COLLECTION.toLowerCase();

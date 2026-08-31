@@ -208,7 +208,7 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
-  - name: ZoraCreator1155Legacy
+  - name: InPublic1155
     handler: src/EventHandlers.ts
     events:
       - event: SetupNewToken (uint256 indexed tokenId, address indexed sender, string newURI, uint256 maxSupply)
@@ -318,8 +318,8 @@ networks:
       # Dynamically registered via ZoraCreatorFactory (post-migration cutoff)
       - name: ZoraCreator1155
         start_block: 47389326
-      # IN PUBLIC legacy 1155 — explicit address from deploy (2024-07-12, block 17016014)
-      - name: ZoraCreator1155Legacy
+      # IN PUBLIC 1155 (@inpublic) — explicit address from deploy (2024-07-12, block 17016014)
+      - name: InPublic1155
         start_block: 17016014
         address:
           - 0x3f209430017e4Fa79FEcf663Faff8584c0feAc78

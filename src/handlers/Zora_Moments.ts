@@ -1,10 +1,10 @@
 import {
   ZoraCreator1155,
-  ZoraCreator1155Legacy,
+  InPublic1155,
   type ZoraCreator1155_SetupNewToken_handlerArgs,
   type ZoraCreator1155_URI_handlerArgs,
-  type ZoraCreator1155Legacy_SetupNewToken_handlerArgs,
-  type ZoraCreator1155Legacy_URI_handlerArgs,
+  type InPublic1155_SetupNewToken_handlerArgs,
+  type InPublic1155_URI_handlerArgs,
 } from "generated";
 import { buildMoment } from "@/lib/zora_protocol/buildMoment";
 
@@ -14,8 +14,8 @@ ZoraCreator1155.SetupNewToken.handler(
   }
 );
 
-ZoraCreator1155Legacy.SetupNewToken.handler(
-  async ({ event, context }: ZoraCreator1155Legacy_SetupNewToken_handlerArgs) => {
+InPublic1155.SetupNewToken.handler(
+  async ({ event, context }: InPublic1155_SetupNewToken_handlerArgs) => {
     context.Zora_Moments.set(buildMoment(event));
   }
 );
@@ -32,8 +32,8 @@ ZoraCreator1155.URI.handler(async ({ event, context }: ZoraCreator1155_URI_handl
   });
 });
 
-ZoraCreator1155Legacy.URI.handler(
-  async ({ event, context }: ZoraCreator1155Legacy_URI_handlerArgs) => {
+InPublic1155.URI.handler(
+  async ({ event, context }: InPublic1155_URI_handlerArgs) => {
     const id = `${event.srcAddress.toLowerCase()}_${event.params.id}_${event.chainId}`;
     const existing = await context.Zora_Moments.get(id);
     if (!existing) return;
