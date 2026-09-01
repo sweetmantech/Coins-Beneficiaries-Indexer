@@ -4,7 +4,7 @@ import type { InProcess_Comments, Transfers } from "generated";
 import { zeroAddress } from "viem";
 import { IN_PUBLIC_1155 } from "@/lib/inpublic/constants";
 
-const { MockDb, InPublic1155, InPublicFixedPriceSale } = TestHelpers;
+const { MockDb, InPublic1155, Zora } = TestHelpers;
 
 const ADMIN = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
 const BUYER = "0xcfbf34d385ea2d5eb947063b67ea226dcda3dc38";
@@ -118,11 +118,11 @@ describe("IN PUBLIC 1155 Handler Tests", () => {
     });
   });
 
-  describe("InPublicFixedPriceSale.MintComment", () => {
+  describe("Zora.MintComment", () => {
     it("should create InProcess_Comments for IN PUBLIC mint comments", async () => {
       const mockDb = MockDb.createMockDb();
 
-      const event = InPublicFixedPriceSale.MintComment.createMockEvent({
+      const event = Zora.MintComment.createMockEvent({
         sender: BUYER,
         tokenContract: IN_PUBLIC_1155,
         tokenId: 1n,
@@ -130,7 +130,7 @@ describe("IN PUBLIC 1155 Handler Tests", () => {
         comment: "IN PUBLIC mint comment",
       });
 
-      const mockDbUpdated = await InPublicFixedPriceSale.MintComment.processEvent({
+      const mockDbUpdated = await Zora.MintComment.processEvent({
         event,
         mockDb,
       });
@@ -160,7 +160,7 @@ describe("IN PUBLIC 1155 Handler Tests", () => {
     it("should skip mint comments for non-IN PUBLIC collections", async () => {
       const mockDb = MockDb.createMockDb();
 
-      const event = InPublicFixedPriceSale.MintComment.createMockEvent({
+      const event = Zora.MintComment.createMockEvent({
         sender: BUYER,
         tokenContract: OTHER_COLLECTION,
         tokenId: 1n,
@@ -168,7 +168,7 @@ describe("IN PUBLIC 1155 Handler Tests", () => {
         comment: "Other collection comment",
       });
 
-      const mockDbUpdated = await InPublicFixedPriceSale.MintComment.processEvent({
+      const mockDbUpdated = await Zora.MintComment.processEvent({
         event,
         mockDb,
       });
