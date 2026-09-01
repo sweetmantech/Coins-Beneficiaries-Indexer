@@ -157,6 +157,30 @@ describe("IN PUBLIC 1155 Handler Tests", () => {
       assert.deepEqual(actualEntity, expectedEntity);
     });
 
+    it("should create InProcess_Comments for token 12+ mint comments", async () => {
+      const mockDb = MockDb.createMockDb();
+
+      const event = ZoraFixedPriceSaleStrategy.MintComment.createMockEvent({
+        sender: BUYER,
+        tokenContract: IN_PUBLIC_1155,
+        tokenId: 25n,
+        quantity: 1n,
+        comment: "Later token mint comment",
+      });
+
+      const mockDbUpdated = await ZoraFixedPriceSaleStrategy.MintComment.processEvent({
+        event,
+        mockDb,
+      });
+
+      const collection = IN_PUBLIC_1155.toLowerCase();
+      const entityId = `${collection}_25_${event.chainId}_${event.block.number}_${event.logIndex}`;
+      const actualEntity = mockDbUpdated.entities.InProcess_Comments.get(entityId);
+
+      assert.equal(actualEntity?.token_id, 25n);
+      assert.equal(actualEntity?.comment, "Later token mint comment");
+    });
+
     it("should skip mint comments for non-IN PUBLIC collections", async () => {
       const mockDb = MockDb.createMockDb();
 

@@ -5,7 +5,7 @@ import {
 import { buildComment } from "@/lib/zora_protocol/buildComment";
 import { IN_PUBLIC_1155, isInPublicCollection } from "@/lib/inpublic/constants";
 
-// MintComment emits from Zora fixed-price sale (0x04E2516…), not InPublic1155.
+// MintComment emits from Zora fixed-price sale contracts (legacy 0x04E2516…, current 0x77777772…), not InPublic1155.
 // eventFilters + handler scope: only Yuri IN PUBLIC collection tokens (1–43).
 ZoraFixedPriceSaleStrategy.MintComment.handler(
   async ({ event, context }: ZoraFixedPriceSaleStrategy_MintComment_handlerArgs) => {

@@ -330,11 +330,12 @@ networks:
         start_block: 17016014
         address:
           - 0x3f209430017e4Fa79FEcf663Faff8584c0feAc78
-      # Zora fixed-price sale (0x04E2516…) — IN PUBLIC mint comments only
+      # Zora fixed-price sale — IN PUBLIC mint comments (legacy + current sale contracts)
       - name: ZoraFixedPriceSaleStrategy
         start_block: 17016014
         address:
           - 0x04E2516A2c207E84a1839755675dfd8eF6302F0a
+          - 0x777777722d078c97c6ad07d9f36801e653e356ae
 
   - id: 84532
     start_block: 23208989
