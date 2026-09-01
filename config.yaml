@@ -227,7 +227,7 @@ contracts:
         field_selection:
           transaction_fields:
             - hash
-  - name: ZoraFixedPriceSale
+  - name: ZoraFixedPriceSaleStrategy
     handler: src/EventHandlers.ts
     events:
       - event: MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment)
@@ -331,7 +331,7 @@ networks:
         address:
           - 0x3f209430017e4Fa79FEcf663Faff8584c0feAc78
       # Zora fixed-price sale (0x04E2516…) — IN PUBLIC mint comments only
-      - name: ZoraFixedPriceSale
+      - name: ZoraFixedPriceSaleStrategy
         start_block: 17016014
         address:
           - 0x04E2516A2c207E84a1839755675dfd8eF6302F0a

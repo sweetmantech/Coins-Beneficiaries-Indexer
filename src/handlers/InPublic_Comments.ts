@@ -1,14 +1,14 @@
 import {
-  ZoraFixedPriceSale,
-  type ZoraFixedPriceSale_MintComment_handlerArgs,
+  ZoraFixedPriceSaleStrategy,
+  type ZoraFixedPriceSaleStrategy_MintComment_handlerArgs,
 } from "generated";
 import { buildComment } from "@/lib/zora_protocol/buildComment";
 import { IN_PUBLIC_1155, isInPublicCollection } from "@/lib/inpublic/constants";
 
 // MintComment emits from Zora fixed-price sale (0x04E2516…), not InPublic1155.
 // eventFilters + handler scope: only Yuri IN PUBLIC collection tokens (1–43).
-ZoraFixedPriceSale.MintComment.handler(
-  async ({ event, context }: ZoraFixedPriceSale_MintComment_handlerArgs) => {
+ZoraFixedPriceSaleStrategy.MintComment.handler(
+  async ({ event, context }: ZoraFixedPriceSaleStrategy_MintComment_handlerArgs) => {
     if (!isInPublicCollection(event.params.tokenContract)) return;
 
     context.InProcess_Comments.set(
