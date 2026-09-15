@@ -255,13 +255,12 @@ networks:
           - 0x2bf5EBEEb028D5F9E02F0F432Ebb1a192F5528F1
       - name: InProcessMoment
         start_block: 25216322
-      # Reverted to InProcess launch block ahead of a full Supabase comments
-      # wipe + rebackfill (see matching note on Base's ZoraComments below) —
-      # the "no Eth protocol comments yet" claim in the prior note is
-      # unverified, so re-scan [25216322, 25596261) to be safe. Re-advance
-      # only after the backfill is verified.
+      # Re-advanced after the full resync (log_index + reverted range) landed
+      # in this deployment. Supabase comments backfill is pinned to this
+      # deployment's id, so it's decoupled from any later start_block change
+      # here — see fix/revert-comments-start-block-log-index for the history.
       - name: ZoraComments
-        start_block: 25216322
+        start_block: 25596261
         address:
           - 0x7777777C2B3132e03a65721a41745C07170a5877
       - name: SoundCreatorV2
@@ -291,12 +290,12 @@ networks:
         start_block: 27712746
         address:
           - 0x2994762aa0e4c750c51f333c10d81961faebe785
-      # Reverted to InProcess launch block ahead of a full Supabase comments
-      # wipe + rebackfill — a fresh Envio sync must re-cover [27712746,
-      # 48953339) or those historical Commented rows are unrecoverable via
-      # Envio. Re-advance to 48953339 only after the backfill is verified.
+      # Re-advanced after the full resync (log_index + reverted range) landed
+      # in this deployment. Supabase comments backfill is pinned to this
+      # deployment's id, so it's decoupled from any later start_block change
+      # here — see fix/revert-comments-start-block-log-index for the history.
       - name: ZoraComments
-        start_block: 27712746
+        start_block: 48953339
         address:
           - 0x7777777C2B3132e03a65721a41745C07170a5877
       # In Process Comments proxy deploy (new admin / atomic init)
