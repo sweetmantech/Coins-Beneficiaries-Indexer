@@ -50,5 +50,6 @@ export function buildComment({
     commented_at: timestamp,
     transaction_hash: txHash,
     chain_id: chainId,
+    log_index: Number(logIndex),
   };
 }
