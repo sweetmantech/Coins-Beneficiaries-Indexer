@@ -60,6 +60,9 @@ type InProcess_Comments {
   chain_id: Int!
   commented_at: Int!
   transaction_hash: String!
+  # Disambiguates multiple MintComment logs within one transaction (no
+  # comment_id to key off of) — see (transaction_hash, log_index) dedup.
+  log_index: Int!
 }
 
 type Catalog_Moments {
